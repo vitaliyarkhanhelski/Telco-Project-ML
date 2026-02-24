@@ -30,13 +30,35 @@ def load_dataset() -> pd.DataFrame:
     return pd.read_csv(DATA_DIR / DATASET_FILENAME)
 
 
-def print_dataset_overview(df: pd.DataFrame) -> None:
+def display_unique_values_for_object_columns(df: pd.DataFrame) -> None:
+    """Print unique values for each column of object (string) type."""
+    for col in df.select_dtypes(include="object").columns:
+        print(f"{col}: {df[col].unique()}")
+
+
+def dataset_overview(df: pd.DataFrame) -> None:
     """Print initial dataset exploration: describe, head, missing values, and dtypes."""
     print(df.head())
     print(df.describe())
     print(df.describe(include='object'))
     print(df.isna().sum())
     print(df.info())
+
+
+def unify_redundant_categories(df: pd.DataFrame) -> pd.DataFrame:
+    """Unify redundant service categories: 'No internet service' -> 'No', 'No phone service' -> 'No'."""
+    cols_to_fix = [
+        "OnlineSecurity",
+        "OnlineBackup",
+        "DeviceProtection",
+        "TechSupport",
+        "StreamingTV",
+        "StreamingMovies",
+    ]
+    for col in cols_to_fix:
+        df[col] = df[col].replace("No internet service", "No")
+    df["MultipleLines"] = df["MultipleLines"].replace("No phone service", "No")
+    return df
 
 
 def preprocess_TotalCharges(df: pd.DataFrame) -> pd.DataFrame:
@@ -55,7 +77,7 @@ def preprocess_TotalCharges(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-def encode_target_variable(df: pd.DataFrame) -> pd.DataFrame:
+def encode_target(df: pd.DataFrame) -> pd.DataFrame:
     """
     Converts the binary target column 'Churn' from string labels to integers.
     """
