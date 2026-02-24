@@ -14,7 +14,14 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from src.utils import download_dataset, generate_report, load_dataset, preprocess_TotalCharges  # noqa: E402
+from src.utils import (  # noqa: E402
+    download_dataset,
+    encode_target_variable,
+    generate_report,
+    load_dataset,
+    preprocess_TotalCharges,
+    print_dataset_overview,
+)
 
 
 def main() -> None:
@@ -22,18 +29,11 @@ def main() -> None:
     # download_dataset()
     df = load_dataset()
     # generate_report(df)
-
-    # check out the data
-    print(df.head())
-
-    # check out nan values in dataset
-    print(df.isna().sum())
-
-    # check out the data types
-    print(df.info())
+    
+    print_dataset_overview(df)
 
     df = preprocess_TotalCharges(df)
-
+    df = encode_target_variable(df)
 
 
 if __name__ == "__main__":

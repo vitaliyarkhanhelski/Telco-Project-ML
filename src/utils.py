@@ -30,6 +30,15 @@ def load_dataset() -> pd.DataFrame:
     return pd.read_csv(DATA_DIR / DATASET_FILENAME)
 
 
+def print_dataset_overview(df: pd.DataFrame) -> None:
+    """Print initial dataset exploration: describe, head, missing values, and dtypes."""
+    print(df.head())
+    print(df.describe())
+    print(df.describe(include='object'))
+    print(df.isna().sum())
+    print(df.info())
+
+
 def preprocess_TotalCharges(df: pd.DataFrame) -> pd.DataFrame:
     """Convert TotalCharges to numeric and fill missing values with 0. Modifies df in place.
 
@@ -44,6 +53,14 @@ def preprocess_TotalCharges(df: pd.DataFrame) -> pd.DataFrame:
     # fill missing values with 0
     df["TotalCharges"] = df["TotalCharges"].fillna(0)
 
+    return df
+
+def encode_target_variable(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Converts the binary target column 'Churn' from string labels to integers.
+    """
+    print(df.Churn.value_counts())
+    df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0})
     return df
 
 
