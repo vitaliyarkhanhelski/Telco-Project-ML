@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from src.data_loader import DATA_DIR
+from src.settings import DATA_DIR
 
 
 def save_to_csv(df: pd.DataFrame, filename: str, index: bool = False) -> None:

@@ -1,17 +1,11 @@
 """Data loading utilities."""
 
-from pathlib import Path
-
 import kaggle
 import pandas as pd
 from dotenv import load_dotenv
 
-# Project paths (for data)
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
-DATASET_FILENAME = "WA_Fn-UseC_-Telco-Customer-Churn.csv"
+from src.settings import DATA_DIR, DATASET_FILENAME, PROJECT_ROOT
 
-# Load .env (Kaggle credentials) before any Kaggle API calls
 load_dotenv(PROJECT_ROOT / ".env")
 
 

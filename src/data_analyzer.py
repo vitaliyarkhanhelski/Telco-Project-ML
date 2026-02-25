@@ -1,12 +1,9 @@
 """Data analysis utilities."""
 
-from pathlib import Path
-
 import pandas as pd
 from ydata_profiling import ProfileReport
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-REPORTS_DIR = PROJECT_ROOT / "reports"
+from src.settings import REPORTS_DIR
 
 
 def display_unique_values_for_object_columns(df: pd.DataFrame) -> None:

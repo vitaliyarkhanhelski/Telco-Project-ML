@@ -1,5 +1,13 @@
 """Project constants and configuration."""
 
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
+CHARTS_DIR = PROJECT_ROOT / "charts"
+REPORTS_DIR = PROJECT_ROOT / "reports"
+DATASET_FILENAME = "WA_Fn-UseC_-Telco-Customer-Churn.csv"
+
 settings = {
     "cols_to_unify": [
         "OnlineSecurity",
