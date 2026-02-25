@@ -1,13 +1,16 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
+
+import src.visualization as visualization
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
+from sklearn.preprocessing import StandardScaler
 
 def split_data(df):
-    """Dzieli dane na zbiór treningowy i testowy (TYLKO RAZ!)."""
+    """Split data into training and test sets (ONLY ONCE!)."""
     X = df.drop('Churn', axis=1)
     y = df['Churn']
     
@@ -16,55 +19,78 @@ def split_data(df):
         X, y, test_size=0.2, random_state=42, stratify=y
     )
     
-    print(f"Zbiór treningowy: {X_train.shape[0]} wierszy")
-    print(f"Zbiór testowy: {X_test.shape[0]} wierszy")
+    print(f"Training set: {X_train.shape[0]} rows")
+    print(f"Test set: {X_test.shape[0]} rows")
     
     return X_train, X_test, y_train, y_test
 
 def train_and_compare_models(X_train, X_test, y_train, y_test):
-    """Trenuje 4 różne modele ML i porównuje ich wyniki w tabeli."""
+    """Train 4 different ML models and compare their results in a table."""
     
-    # Definiujemy słownik z naszymi modelami
-    # max_iter=1000 dla Regresji Logistycznej zapobiega błędom o braku zbieżności
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    # Define dictionary with our models
+    # max_iter=1000 for Logistic Regression to avoid convergence errors
     models = {
-        "Regresja Logistyczna": LogisticRegression(max_iter=1000, random_state=42),
-        "Drzewo Decyzyjne": DecisionTreeClassifier(random_state=42),
+        "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
+        "Decision Tree": DecisionTreeClassifier(random_state=42),
         "Random Forest": RandomForestClassifier(random_state=42),
         "XGBoost": XGBClassifier(random_state=42, eval_metric='logloss')
     }
     
-    results = [] # Pusta lista na nasze wyniki
+    results = []
     
-    # Pętla przechodzi przez każdy model po kolei
     for name, model in models.items():
-        # 1. Faza uczenia (trening na danych historycznych)
-        model.fit(X_train, y_train)
+        # 1. Training phase (training on historical data)
+        model.fit(X_train_scaled, y_train)
         
-        # 2. Faza testowania (egzamin na ukrytych danych)
-        y_pred = model.predict(X_test)
+        # 2. Testing phase (testing on hidden data)
+        y_pred = model.predict(X_test_scaled)
         
-        # 3. Obliczanie metryk
+        # 3. Calculating metrics
         acc = accuracy_score(y_test, y_pred)
         recall = recall_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
         
-        # Dodanie wyników do listy
+        # Adding results to the list
         results.append({
             "Model": name,
-            "Accuracy (Dokładność)": round(acc, 4),
-            "Recall (Czułość)": round(recall, 4),
-            "Precision (Precyzja)": round(precision, 4),
+            "Accuracy": round(acc, 4),
+            "Recall": round(recall, 4),
+            "Precision": round(precision, 4),
             "F1-Score": round(f1, 4)
         })
         
-    # Konwersja listy do czytelnego DataFrame
+    # Convert list to readable DataFrame
     results_df = pd.DataFrame(results)
     
-    # Sortujemy od najlepszego wyniku w Recall (wyłapywanie odchodzących)
-    results_df = results_df.sort_values(by="Recall (Czułość)", ascending=False).reset_index(drop=True)
+    # Sort by the best Recall (catching churners)
+    results_df = results_df.sort_values(by="Recall", ascending=False).reset_index(drop=True)
     
-    print("\n--- PORÓWNANIE MODELI ---")
+    print("\n--- MODEL COMPARISON ---")
     print(results_df.to_string())
     
     return results_df
+
+
+def get_logistic_regression_predictions(X_train, X_test, y_train):
+    """Train the winning model and return its predictions for the chart."""
+    # Skalujemy dane również tutaj, żeby model zadziałał poprawnie
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    log_reg = LogisticRegression(random_state=42)
+    log_reg.fit(X_train_scaled, y_train)
+    y_pred = log_reg.predict(X_test_scaled)
+    
+    return y_pred
+
+
+def plot_logistic_regression_confusion_matrix(X_train, X_test, y_train, y_test):
+    """Get logistic regression predictions and plot the confusion matrix."""
+    y_pred = get_logistic_regression_predictions(X_train, X_test, y_train)
+    visualization.plot_confusion_matrix(y_test, y_pred)

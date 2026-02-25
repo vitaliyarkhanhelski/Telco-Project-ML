@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from sklearn.feature_selection import mutual_info_classif
+from sklearn.metrics import confusion_matrix
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CHARTS_DIR = PROJECT_ROOT / "charts"
@@ -106,3 +107,34 @@ def plot_mutual_information(df: pd.DataFrame) -> None:
         "for a categorical target. Mutual Information is based on Entropy, so it "
         "can catch non-linear and much more complex dependencies."
     )
+
+
+def plot_confusion_matrix(y_true, y_pred, title="Confusion Matrix - Logistic Regression"):
+    """Plot and save the Confusion Matrix for the model."""
+    cm = confusion_matrix(y_true, y_pred)
+    tn, fp, fn, tp = cm.ravel()
+
+    n = len(y_true)
+    print(f"\nFrom {n} test cases: TN={tn}, FP={fp}, FN={fn}, TP={tp}")
+    print(cm)
+
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        xticklabels=["Stays (No)", "Churns (Yes)"],
+        yticklabels=["Stays (No)", "Churns (Yes)"],
+    )
+
+    plt.title(title, pad=20, fontsize=14)
+    plt.ylabel("True Label", fontsize=12, fontweight="bold")
+    plt.xlabel("Predicted Label", fontsize=12, fontweight="bold")
+
+    plt.tight_layout()
+    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(CHARTS_DIR / "confusion_matrix.png", bbox_inches="tight", dpi=300)
+    plt.show()
+
+    print("\nConfusion matrix chart saved as 'charts/confusion_matrix.png'")
