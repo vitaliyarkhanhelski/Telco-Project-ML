@@ -27,9 +27,9 @@ import src.model_trainer as model_trainer  # noqa: E402
 def main() -> None:
     """Main function - project entry point."""
     df = data_loader.load_data()
-    # data_analyzer.run_initial_analysis(df)
+    data_analyzer.run_initial_analysis(df)
     df = data_preprocessing.clean_and_encode_data(df)
-    # visualization.visualize_feature_relationships(df)
+    visualization.visualize_feature_relationships(df)
 
     # Feature Selection - remove noisy features
     df = data_preprocessing.drop_useless_columns(df)

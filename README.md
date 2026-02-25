@@ -33,12 +33,14 @@ telco_project_ML/
 │   ├── data_loader.py       # Data loading (download, load)
 │   ├── data_analyzer.py     # EDA (report, overview)
 │   ├── data_preprocessing.py# Cleaning, encoding, feature selection
-│   ├── visualization.py     # Correlation & Mutual Information plots
-│   ├── model_trainer.py     # Model training and evaluation
+│   ├── visualization.py     # Correlation, Mutual Information, confusion matrix
+│   ├── model_trainer.py     # Model training, evaluation, confusion matrix plot
+│   ├── utils.py             # save_to_csv (writes to data folder)
 │   └── settings.py          # Constants and configuration
-├── data/                    # Dataset (gitignored)
+├── data/                    # Dataset and outputs (gitignored)
 ├── reports/                 # Generated reports (gitignored)
-├── charts/                  # Generated charts (gitignored)
+├── charts/                  # Confusion matrix and other plots
+├── glossary.md              # ML terms reference
 ├── requirements.txt
 └── README.md
 ```
@@ -127,9 +129,11 @@ python -m src.main
 1. **Data loading** – Download from Kaggle, load into DataFrame
 2. **Initial analysis** – Generate report, dataset overview
 3. **Preprocessing** – TotalCharges fix, target encoding, drop customerID, unify categories, encode features, one-hot encoding
-4. **Feature analysis** – Pearson/Spearman/Kendall correlation heatmaps, Mutual Information
+4. **Feature analysis** – Pearson/Spearman/Kendall correlation heatmaps, Mutual Information; `src/visualization.py` saves charts to `charts/`: [churn_correlation_pearson.png](charts/churn_correlation_pearson.png), [churn_correlation_spearman.png](charts/churn_correlation_spearman.png), [churn_correlation_kendall.png](charts/churn_correlation_kendall.png), [mutual_information.png](charts/mutual_information.png)
 5. **Feature selection** – Drop useless columns (Mutual Information)
 6. **Model training** – Train and compare models, evaluate metrics
+7. **Save results** – Model comparison table saved to `data/initial_model_results.csv` via `utils.save_to_csv`
+8. **Confusion matrix** – Plot and print TN/FP/FN/TP for Logistic Regression; [confusion_matrix.png](charts/confusion_matrix.png)
 
 ## Results
 
@@ -150,7 +154,7 @@ This project demonstrates a complete and realistic machine learning pipeline, fr
 
 - The project uses `.py` files only (no Jupyter notebooks)
 - Run and test code via the Python console or by executing scripts
-- Additional utilities will be added to `src/` as the project grows
+- `glossary.md` explains ML terms used in the project
 
 ## Dataset Reference
 
