@@ -22,7 +22,8 @@ settings = {
         "StreamingMovies",
         "PaperlessBilling",
     ],
-    "cols_to_drop": [
+    "one_hot_encoding_cols": ["PaymentMethod", "InternetService"],
+    "useless_cols_to_drop": [
         "StreamingTV",
         "PhoneService",
         "MultipleLines",

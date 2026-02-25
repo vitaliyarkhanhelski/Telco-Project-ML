@@ -29,8 +29,17 @@ The model can help the company:
 ```
 telco_project_ML/
 ├── src/
-│   └── main.py          # Main entry point
-├── requirements.txt     # Python dependencies with versions
+│   ├── main.py              # Main entry point
+│   ├── data_loader.py       # Data loading (download, load)
+│   ├── data_analyzer.py     # EDA (report, overview)
+│   ├── data_preprocessing.py# Cleaning, encoding, feature selection
+│   ├── visualization.py     # Correlation & Mutual Information plots
+│   ├── model_trainer.py     # Model training and evaluation
+│   └── settings.py          # Constants and configuration
+├── data/                    # Dataset (gitignored)
+├── reports/                 # Generated reports (gitignored)
+├── charts/                  # Generated charts (gitignored)
+├── requirements.txt
 └── README.md
 ```
 
@@ -113,9 +122,29 @@ Or from the project root with module execution:
 python -m src.main
 ```
 
-## ML Pipeline (to be documented)
+## ML Pipeline
 
-Stages such as data preprocessing, feature engineering, model training, and evaluation will be described here as the project progresses. The goal is to demonstrate a complete and realistic machine learning pipeline—from data understanding to business-driven model optimization.
+1. **Data loading** – Download from Kaggle, load into DataFrame
+2. **Initial analysis** – Generate report, dataset overview
+3. **Preprocessing** – TotalCharges fix, target encoding, drop customerID, unify categories, encode features, one-hot encoding
+4. **Feature analysis** – Pearson/Spearman/Kendall correlation heatmaps, Mutual Information
+5. **Feature selection** – Drop useless columns (Mutual Information)
+6. **Model training** – Train and compare models, evaluate metrics
+
+## Results
+
+After initially testing four algorithms without hyperparameter tuning, the simple, linear **Logistic Regression** model proved to be the best. This indicates that following thorough data cleaning and noise removal (using Mutual Information), the underlying relationships determining customer churn are largely linear. More complex models, such as Random Forest or XGBoost, would require advanced hyperparameter tuning to beat this baseline result.
+
+| Model | Accuracy | Recall | Precision | F1-Score |
+|-------|----------|--------|-----------|----------|
+| Logistic Regression | 0.8027 | 0.5535 | 0.6509 | 0.5983 |
+| XGBoost | 0.7828 | 0.5160 | 0.6069 | 0.5578 |
+| Decision Tree | 0.7303 | 0.5080 | 0.4922 | 0.5000 |
+| Random Forest | 0.7821 | 0.4893 | 0.6120 | 0.5438 |
+
+## Final Evaluation
+
+This project demonstrates a complete and realistic machine learning pipeline, from data understanding to business-driven model optimization.
 
 ## Development Notes
 
