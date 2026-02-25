@@ -5,6 +5,8 @@ from pathlib import Path
 import pandas as pd
 from dotenv import load_dotenv
 
+from src.settings import settings
+
 # Project paths
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
@@ -47,21 +49,14 @@ def dataset_overview(df: pd.DataFrame) -> None:
 
 def unify_redundant_categories(df: pd.DataFrame) -> pd.DataFrame:
     """Unify redundant service categories: 'No internet service' -> 'No', 'No phone service' -> 'No'."""
-    cols_to_fix = [
-        "OnlineSecurity",
-        "OnlineBackup",
-        "DeviceProtection",
-        "TechSupport",
-        "StreamingTV",
-        "StreamingMovies",
-    ]
-    for col in cols_to_fix:
+    cols_to_unify = settings.get("cols_to_unify", [])
+    for col in cols_to_unify:
         df[col] = df[col].replace("No internet service", "No")
     df["MultipleLines"] = df["MultipleLines"].replace("No phone service", "No")
     return df
 
 
-def preprocess_TotalCharges(df: pd.DataFrame) -> pd.DataFrame:
+def preprocess_TotalCharges_column(df: pd.DataFrame) -> pd.DataFrame:
     """Convert TotalCharges to numeric and fill missing values with 0. Modifies df in place.
 
     Missing TotalCharges occur when tenure=0 (new customers before first billing cycle).
@@ -77,7 +72,7 @@ def preprocess_TotalCharges(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-def encode_target(df: pd.DataFrame) -> pd.DataFrame:
+def encode_target_column(df: pd.DataFrame) -> pd.DataFrame:
     """
     Converts the binary target column 'Churn' from string labels to integers.
     """
