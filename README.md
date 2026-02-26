@@ -169,6 +169,30 @@ After initially testing four algorithms without hyperparameter tuning, the simpl
 | Decision Tree | 0.7303 | 0.5080 | 0.4922 | 0.5000 |
 | Random Forest | 0.7821 | 0.4893 | 0.6120 | 0.5438 |
 
+### Hyperparameter Tuning Strategy
+
+After establishing the baseline, we will apply Hyperparameter Tuning to optimize our models. Our primary goal is to **maximize Recall** (to catch as many churning customers as possible) while maintaining a reasonable and healthy level of **Precision** (to avoid excessive false alarms). To achieve this, we will address the class imbalance and tune the following key hyperparameters for each model:
+
+* **Logistic Regression:**
+  * `C`: Controls how much the model tries to "memorize" the training data. A lower number forces the model to look at the big picture rather than getting obsessed with tiny details.
+  * `penalty`: The specific math rule used to keep the model simple and prevent it from overcomplicating things.
+  * `class_weight='balanced'`: Forces the model to pay extra attention to churning customers, since they are a minority in our dataset.
+
+* **Decision Tree:**
+  * `max_depth`: Limits how many questions (Yes/No rules) the tree can ask in a row. Stopping it from growing too deep prevents it from creating overly complex rules.
+  * `min_samples_split`: The minimum number of customers a group must have before the tree splits it again. It stops the model from creating very specific rules for just one or two people.
+  * `class_weight='balanced'`: Punishes the model much harder if it misses a churning customer.
+
+* **Random Forest:**
+  * `n_estimators`: Simply the number of trees in our forest. More trees give a better "majority vote," but take longer to calculate.
+  * `max_depth`: Limits the maximum size of every single tree in the forest.
+  * `class_weight='balanced'`: Ensures the whole forest takes the rare churning customers seriously.
+
+* **XGBoost:**
+  * `learning_rate`: How big of a step the model takes when learning from its mistakes. A smaller number means it learns slower but much more carefully.
+  * `max_depth`: Limits the complexity of each tree it builds.
+  * `scale_pos_weight`: XGBoost's own version of the "pay attention to the minority" rule. It balances the scales between the people who stay and the people who leave.
+
 ## Final Evaluation
 
 This project demonstrates a complete and realistic machine learning pipeline, from data understanding to business-driven model optimization.

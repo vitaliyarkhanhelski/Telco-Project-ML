@@ -19,7 +19,10 @@ def dataset_overview(df: pd.DataFrame) -> None:
     print(df.describe(include="object"))
     print(df.isna().sum())
     print(df.info())
+    print("\nChurn value counts:")
     print(df.Churn.value_counts())
+    print("\nChurn (%):")
+    print((df.Churn.value_counts(normalize=True) * 100).round(1).astype(str) + "%")
     display_unique_values_for_object_columns(df)
 
 
