@@ -39,16 +39,18 @@ def main() -> None:
     results_df = model_trainer.train_and_compare_models(X_train, X_test, y_train, y_test)
     # utils.save_to_csv(results_df, "initial_model_results.csv")
 
-    # model_trainer.plot_logistic_regression_confusion_matrix(
-    #     X_train, X_test, y_train, y_test
-    # )
+    y_pred_log_reg = model_trainer.plot_logistic_regression_confusion_matrix(
+        X_train, X_test, y_train, y_test
+    )
 
     tuned_results_df = model_trainer.tune_hyperparameters(X_train, X_test, y_train, y_test)
     # utils.save_to_csv(tuned_results_df, "tuned_model_results.csv")
 
-    model_trainer.plot_tuned_random_forest_confusion_matrix(
+    y_pred_rf_tuned = model_trainer.plot_tuned_random_forest_confusion_matrix(
         X_train, X_test, y_train, y_test
     )
+
+    model_trainer.print_business_impact_simulation(y_test, y_pred_log_reg, y_pred_rf_tuned)
 
 
 if __name__ == "__main__":

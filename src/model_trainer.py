@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -112,16 +113,18 @@ def get_tuned_rf_predictions(X_train, X_test, y_train):
     return y_pred
 
 
-def plot_logistic_regression_confusion_matrix(X_train, X_test, y_train, y_test):
+def plot_logistic_regression_confusion_matrix(X_train, X_test, y_train, y_test) -> np.ndarray:
     """Get logistic regression predictions and plot the confusion matrix."""
     y_pred = get_logistic_regression_predictions(X_train, X_test, y_train)
     visualization.plot_confusion_matrix(y_test, y_pred, "Confusion Matrix - Logistic Regression", "confusion_matrix_initial_logistic_regression.png")
+    return y_pred
 
 
-def plot_tuned_random_forest_confusion_matrix(X_train, X_test, y_train, y_test):
+def plot_tuned_random_forest_confusion_matrix(X_train, X_test, y_train, y_test) -> np.ndarray:
     """Get tuned random forest predictions and plot the confusion matrix."""
     y_pred = get_tuned_rf_predictions(X_train, X_test, y_train)
     visualization.plot_confusion_matrix(y_test, y_pred, "Confusion Matrix - Tuned Random Forest", "confusion_matrix_tuned_random_forest.png")
+    return y_pred
 
 
 def tune_hyperparameters(X_train, X_test, y_train, y_test):
@@ -213,3 +216,49 @@ def tune_hyperparameters(X_train, X_test, y_train, y_test):
     print(results_df.to_string())
     
     return results_df
+
+def print_business_impact_simulation(y_test, y_pred_baseline, y_pred_tuned):
+    """
+    Computes and displays a financial simulation based on the Confusion Matrix.
+    LTV = 1000 (Customer Lifetime Value)
+    Discount cost = 100
+    """
+    from sklearn.metrics import confusion_matrix
+
+    cm_base = confusion_matrix(y_test, y_pred_baseline)
+    cm_tuned = confusion_matrix(y_test, y_pred_tuned)
+
+    tn_b, fp_b, fn_b, tp_b = cm_base.ravel()
+    tn_t, fp_t, fn_t, tp_t = cm_tuned.ravel()
+
+    LTV = 1000
+    DISCOUNT_COST = 100
+    PROFIT_FROM_RETENTION = LTV - DISCOUNT_COST
+    COST_OF_FALSE_POSITIVE = DISCOUNT_COST
+
+    profit_base = (tp_b * PROFIT_FROM_RETENTION) - (fp_b * COST_OF_FALSE_POSITIVE)
+    profit_tuned = (tp_t * PROFIT_FROM_RETENTION) - (fp_t * COST_OF_FALSE_POSITIVE)
+
+    profit_difference = profit_tuned - profit_base
+    tp_increase_percent = ((tp_t - tp_b) / tp_b) * 100 if tp_b > 0 else 0
+
+    print("\n" + "=" * 50)
+    print("Business simulation (model ROI)")
+    print("=" * 50)
+    print(f"Customer LTV: {LTV} | Campaign cost (discount): {DISCOUNT_COST}\n")
+
+    print("1. Baseline model (Logistic Regression):")
+    print(f"   - Retained customers (TP): {tp_b} -> Profit: {tp_b * PROFIT_FROM_RETENTION}")
+    print(f"   - False alarms (FP): {fp_b} -> Loss: {fp_b * COST_OF_FALSE_POSITIVE}")
+    print(f"   - Net profit: {profit_base}\n")
+
+    print("2. Tuned model (Random Forest):")
+    print(f"   - Retained customers (TP): {tp_t} -> Profit: {tp_t * PROFIT_FROM_RETENTION}")
+    print(f"   - False alarms (FP): {fp_t} -> Loss: {fp_t * COST_OF_FALSE_POSITIVE}")
+    print(f"   - Net profit: {profit_tuned}\n")
+
+    print("-" * 50)
+    print("Summary:")
+    print(f"Tuning caught {tp_t - tp_b} more customers (+{tp_increase_percent:.1f}% effectiveness).")
+    print(f"Overall, the new model would bring {profit_difference} MORE profit than the baseline model on this test sample!")
+    print("=" * 50 + "\n")
