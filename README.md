@@ -16,6 +16,20 @@ This project focuses on predicting customer churn using a real-world telecom dat
 
 The dataset contains customer demographic information, account details, service subscriptions, and churn status. The **target variable** is `Churn`, which indicates whether a customer has discontinued the service.
 
+## Exploratory Data Analysis (EDA)
+
+EDA focused on:
+
+- Distribution of churn vs non-churn customers
+- Relationship between churn and key features
+- Identification of imbalance in the target variable
+- Detection of patterns such as:
+  - Higher churn for month-to-month contracts
+  - Higher churn for customers with low tenure
+  - Impact of pricing on churn behavior
+
+Visualizations were used to support feature understanding and model decisions.
+
 ## Business Insight
 
 The model can help the company:
