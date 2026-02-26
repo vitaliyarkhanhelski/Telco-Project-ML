@@ -27,9 +27,13 @@ import src.model_trainer as model_trainer  # noqa: E402
 def main() -> None:
     """Main function - project entry point."""
     df = data_loader.load_data()
-    # data_analyzer.run_initial_analysis(df)
+    data_analyzer.run_initial_analysis(df)
+
+    # business visualization
+    visualization.plot_business_insights(df)
+
     df = data_preprocessing.clean_and_encode_data(df)
-    # visualization.visualize_feature_relationships(df)
+    visualization.visualize_feature_relationships(df)
 
     # Feature Selection - remove noisy features after charts analysis
     df = data_preprocessing.drop_useless_columns(df)
@@ -39,16 +43,12 @@ def main() -> None:
     results_df = model_trainer.train_and_compare_models(X_train, X_test, y_train, y_test)
     # utils.save_to_csv(results_df, "initial_model_results.csv")
 
-    y_pred_log_reg = model_trainer.plot_logistic_regression_confusion_matrix(
-        X_train, X_test, y_train, y_test
-    )
+    y_pred_log_reg = model_trainer.plot_logistic_regression_confusion_matrix(X_train, X_test, y_train, y_test)
 
     tuned_results_df = model_trainer.tune_hyperparameters(X_train, X_test, y_train, y_test)
     # utils.save_to_csv(tuned_results_df, "tuned_model_results.csv")
 
-    y_pred_rf_tuned = model_trainer.plot_tuned_random_forest_confusion_matrix(
-        X_train, X_test, y_train, y_test
-    )
+    y_pred_rf_tuned = model_trainer.plot_tuned_random_forest_confusion_matrix(X_train, X_test, y_train, y_test)
 
     model_trainer.print_business_impact_simulation(y_test, y_pred_log_reg, y_pred_rf_tuned)
 

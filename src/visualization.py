@@ -162,3 +162,78 @@ def plot_confusion_matrix(y_true, y_pred, title, filename):
     plt.show()
 
     print(f"\nConfusion matrix chart saved as 'charts/{filename}'")
+
+
+def _plot_contract_churn(df: pd.DataFrame) -> None:
+    """Bar chart: Churn by Contract Type."""
+    plt.figure(figsize=(8, 5))
+    sns.countplot(data=df, x="Contract", hue="Churn", palette="Blues")
+    plt.title("Churn by Contract Type", fontsize=14, fontweight="bold")
+    plt.ylabel("Number of Customers")
+    plt.tight_layout()
+    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(CHARTS_DIR / "eda_1_contract.png", bbox_inches="tight", dpi=300)
+    plt.show()
+
+
+def _plot_internet_churn(df: pd.DataFrame) -> None:
+    """Bar chart: Churn by Internet Service."""
+    plt.figure(figsize=(8, 5))
+    sns.countplot(data=df, x="InternetService", hue="Churn", palette="Blues")
+    plt.title("Churn by Internet Service", fontsize=14, fontweight="bold")
+    plt.ylabel("Number of Customers")
+    plt.tight_layout()
+    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(CHARTS_DIR / "eda_2_internet.png", bbox_inches="tight", dpi=300)
+    plt.show()
+
+
+def _plot_tenure_churn(df: pd.DataFrame) -> None:
+    """Boxplot: Tenure vs Churn (Customer Loyalty)."""
+    plt.figure(figsize=(8, 5))
+    sns.boxplot(data=df, x="Churn", y="tenure", palette="Blues", hue="Churn", legend=False)
+    plt.title("Tenure vs Churn (Customer Loyalty)", fontsize=14, fontweight="bold")
+    plt.ylabel("Tenure (Months)")
+    plt.tight_layout()
+    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(CHARTS_DIR / "eda_3_tenure.png", bbox_inches="tight", dpi=300)
+    plt.show()
+
+
+def _plot_charges_churn(df: pd.DataFrame) -> None:
+    """Boxplot: Monthly Charges vs Churn."""
+    plt.figure(figsize=(8, 5))
+    sns.boxplot(data=df, x="Churn", y="MonthlyCharges", palette="Blues", hue="Churn", legend=False)
+    plt.title("Monthly Charges vs Churn", fontsize=14, fontweight="bold")
+    plt.ylabel("Monthly Charges (USD)")
+    plt.tight_layout()
+    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(CHARTS_DIR / "eda_4_charges.png", bbox_inches="tight", dpi=300)
+    plt.show()
+
+
+def _plot_payment_churn(df: pd.DataFrame) -> None:
+    """Bar chart: Churn by Payment Method."""
+    plt.figure(figsize=(10, 5))
+    sns.countplot(data=df, x="PaymentMethod", hue="Churn", palette="Blues")
+    plt.title("Churn by Payment Method", fontsize=14, fontweight="bold")
+    plt.ylabel("Number of Customers")
+    plt.xticks(rotation=15)
+    plt.tight_layout()
+    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(CHARTS_DIR / "eda_5_payment.png", bbox_inches="tight", dpi=300)
+    plt.show()
+
+
+def plot_business_insights(df: pd.DataFrame) -> None:
+    """Generate 5 business charts showing the root causes of churn."""
+    print("\nGenerating business charts (Root Cause Analysis)...")
+    sns.set_theme(style="whitegrid")
+
+    _plot_contract_churn(df)
+    _plot_internet_churn(df)
+    _plot_tenure_churn(df)
+    _plot_charges_churn(df)
+    _plot_payment_churn(df)
+
+    print("Saved 5 charts in the 'charts/' folder")

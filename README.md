@@ -155,8 +155,46 @@ python -m src.main
 8. **Confusion matrix** – Plot and print TN/FP/FN/TP for Logistic Regression:
 
    <p align="center">
-   <a href="charts/confusion_matrix_initial_logistic_regression.png"><img src="charts/confusion_matrix_initial_logistic_regression.png" width="450" alt="Logistic Regression Confusion Matrix"></a>
+   <a href="charts/confusion_matrix_initial_logistic_regression.png"><img src="charts/confusion_matrix_initial_logistic_regression.png" width="500" alt="Logistic Regression Confusion Matrix"></a>
    </p>
+
+---
+
+### 🔍 Root Cause Analysis: Why Are Customers Leaving?
+
+Building a Machine Learning model helps us catch churning customers, but understanding *why* they leave allows the business to fix the root cause. Based on our Exploratory Data Analysis (Correlation and Mutual Information metrics), we identified the primary drivers behind customer churn and prepared the following strategic recommendations:
+
+* **1. Contract Type (The "Month-to-Month" Trap)**
+    * **The Issue:** Customers on month-to-month contracts are by far the most likely to leave. They have no long-term commitment and can easily switch to competitors at a moment's notice.
+    * **Recommendation:** Aggressively incentivize 1-year or 2-year contracts. Offer attractive upgrades, free streaming services, or loyalty discounts to lock customers into longer terms.
+
+   <p align="center"><a href="charts/eda_1_contract.png"><img src="charts/eda_1_contract.png" width="600" alt="Churn by Contract Type"></a></p>
+
+* **2. Internet Service (The "Fiber Optic" Problem)**
+    * **The Issue:** Surprisingly, customers with Fiber Optic internet show a remarkably high churn rate compared to DSL users. 
+    * **Recommendation:** This requires immediate business investigation. The company must check if the Fiber Optic service is overpriced, technically unstable (frequent outages), or if a local competitor is actively undercutting our prices.
+
+   <p align="center"><a href="charts/eda_2_internet.png"><img src="charts/eda_2_internet.png" width="600" alt="Churn by Internet Service"></a></p>
+
+* **3. Tenure (The "First Impression" Matters)**
+    * **The Issue:** New customers (low tenure) have the highest probability of leaving. However, if a customer stays with the company for the first few months, they tend to become highly loyal.
+    * **Recommendation:** Revamp the customer onboarding experience. Provide exceptional, proactive technical support and welcome bonuses during the first 3 to 6 critical months.
+
+   <p align="center"><a href="charts/eda_3_tenure.png"><img src="charts/eda_3_tenure.png" width="600" alt="Tenure vs Churn"></a></p>
+
+* **4. Monthly Charges (Price Sensitivity)**
+    * **The Issue:** There is a strong correlation between high monthly bills and churn. Customers feel the financial pinch and look for cheaper alternatives.
+    * **Recommendation:** Review the pricing strategy for premium packages. Use our newly built Machine Learning model to proactively offer personalized, temporary discounts to high-bill customers who are flagged as "high risk."
+
+   <p align="center"><a href="charts/eda_4_charges.png"><img src="charts/eda_4_charges.png" width="600" alt="Monthly Charges vs Churn"></a></p>
+
+* **5. Payment Method (The "Electronic Check" Friction)**
+    * **The Issue:** Customers paying via Electronic Check churn significantly more often than those using automatic credit card payments or bank transfers. Manual payments force customers to actively think about their bill every month.
+    * **Recommendation:** Remove the friction. Encourage customers to switch to automated payments (Auto-Pay) by offering a small, permanent monthly discount (e.g., $5 off).
+
+   <p align="center"><a href="charts/eda_5_payment.png"><img src="charts/eda_5_payment.png" width="600" alt="Churn by Payment Method"></a></p>
+
+---
 
 ## Results
 
@@ -246,7 +284,7 @@ Although the **Decision Tree** scored a fraction of a percent higher on this spe
 **Conclusion:** While the Decision Tree got slightly "luckier" on this specific batch of 1,409 test customers, the **<u>Random Forest</u> guarantees much higher stability and reliability** when deployed to production. In business, we don't just want a model that passes today's test—we need a robust algorithm we can trust with entirely new, unseen customers tomorrow.
 
 <p align="center">
-  <a href="charts/confusion_matrix_tuned_random_forest.png"><img src="charts/confusion_matrix_tuned_random_forest.png" width="450" alt="Random Forest Confusion Matrix"></a>
+  <a href="charts/confusion_matrix_tuned_random_forest.png"><img src="charts/confusion_matrix_tuned_random_forest.png" width="500" alt="Random Forest Confusion Matrix"></a>
 </p>
 
 ### 💰 Business Value & ROI (Return on Investment) Simulation
