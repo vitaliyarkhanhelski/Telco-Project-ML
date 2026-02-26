@@ -78,7 +78,7 @@ def train_and_compare_models(X_train, X_test, y_train, y_test):
 
 def get_logistic_regression_predictions(X_train, X_test, y_train):
     """Train the winning model and return its predictions for the chart."""
-    # Skalujemy dane również tutaj, żeby model zadziałał poprawnie
+    # Scale data also here, so the model works properly
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)

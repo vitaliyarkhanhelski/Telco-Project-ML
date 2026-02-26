@@ -111,15 +111,24 @@ def plot_confusion_matrix(y_true, y_pred, title="Confusion Matrix - Logistic Reg
     cm = confusion_matrix(y_true, y_pred)
     tn, fp, fn, tp = cm.ravel()
 
-    n = len(y_true)
-    print(f"\nFrom {n} test cases: TN={tn}, FP={fp}, FN={fn}, TP={tp}")
+    total = len(y_true)
+    print(f"\nFrom {total} test cases:")
+    print(f"  TN (True Negative)  = {tn}  – correctly predicted Stays")
+    print(f"  FP (False Positive) = {fp}  – wrongly predicted Churns (actually Stays)")
+    print(f"  FN (False Negative) = {fn}  – wrongly predicted Stays (actually Churns)")
+    print(f"  TP (True Positive)  = {tp}  – correctly predicted Churns")
     print(cm)
+
+    annotations = [
+        [f"{cm[0, 0]}\n({cm[0, 0] / total * 100:.1f}%)", f"{cm[0, 1]}\n({cm[0, 1] / total * 100:.1f}%)"],
+        [f"{cm[1, 0]}\n({cm[1, 0] / total * 100:.1f}%)", f"{cm[1, 1]}\n({cm[1, 1] / total * 100:.1f}%)"],
+    ]
 
     plt.figure(figsize=(8, 6))
     sns.heatmap(
         cm,
-        annot=True,
-        fmt="d",
+        annot=annotations,
+        fmt="",
         cmap="Blues",
         xticklabels=["Stays (No)", "Churns (Yes)"],
         yticklabels=["Stays (No)", "Churns (Yes)"],
