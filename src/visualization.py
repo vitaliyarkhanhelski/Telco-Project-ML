@@ -5,6 +5,7 @@ import pandas as pd
 import seaborn as sns
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.metrics import confusion_matrix
+from matplotlib.colors import ListedColormap
 
 from src.settings import CHARTS_DIR
 
@@ -124,17 +125,34 @@ def plot_confusion_matrix(y_true, y_pred, title="Confusion Matrix - Logistic Reg
         [f"{cm[1, 0]}\n({cm[1, 0] / total * 100:.1f}%)", f"{cm[1, 1]}\n({cm[1, 1] / total * 100:.1f}%)"],
     ]
 
+    # 1. Definiujemy biznesowe kolory (Hex)
+    color_tn = "#A5D6A7"  # 0: Jasnozielony (TN)
+    color_fp = "#FFE082"  # 1: Jasnożółty   (FP)
+    color_fn = "#EF9A9A"  # 2: Jasnoczerwony(FN)
+    color_tp = "#A5D6A7"  # 3: Jasnozielony (TP)
+    
+    # Tworzymy paletę z dokładnie tymi 4 kolorami w odpowiedniej kolejności
+    custom_cmap = ListedColormap([color_tn, color_fp, color_fn, color_tp])
+    
+    # Tworzymy macierz indeksów, żeby Seaborn wiedział, gdzie dać jaki kolor
+    color_indices = [[0, 1], 
+                     [2, 3]]
+
     plt.figure(figsize=(8, 6))
+
+    # 1. Rysujemy heatmapę na białym tle (żeby zresetować domyślne kolory)
     sns.heatmap(
-        cm,
+        color_indices,       
         annot=annotations,
         fmt="",
-        cmap="Blues",
+        cmap=custom_cmap,    
+        cbar=False,
         xticklabels=["Stays (No)", "Churns (Yes)"],
         yticklabels=["Stays (No)", "Churns (Yes)"],
+        annot_kws={"size": 13, "weight": "bold"}
     )
 
-    plt.title(title, pad=20, fontsize=14)
+    plt.title(title, pad=20, fontsize=14, fontweight="bold")
     plt.ylabel("True Label", fontsize=12, fontweight="bold")
     plt.xlabel("Predicted Label", fontsize=12, fontweight="bold")
 
