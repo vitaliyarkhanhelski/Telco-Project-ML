@@ -138,7 +138,11 @@ python -m src.main
 5. **Feature selection** – Drop useless columns (Mutual Information)
 6. **Model training** – Train and compare models, evaluate metrics
 7. **Save results** – Model comparison table saved to `data/initial_model_results.csv` via `utils.save_to_csv`
-8. **Confusion matrix** – Plot and print TN/FP/FN/TP for Logistic Regression; [confusion_matrix_initial_logistic_regression.png](charts/confusion_matrix_initial_logistic_regression.png)
+8. **Confusion matrix** – Plot and print TN/FP/FN/TP for Logistic Regression:
+
+   <p align="center">
+   <a href="charts/confusion_matrix_initial_logistic_regression.png"><img src="charts/confusion_matrix_initial_logistic_regression.png" width="450" alt="Confusion Matrix"></a>
+   </p>
 
 ## Results
 
