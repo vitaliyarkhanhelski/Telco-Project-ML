@@ -129,11 +129,16 @@ python -m src.main
 1. **Data loading** – Download from Kaggle, load into DataFrame
 2. **Initial analysis** – Generate report, dataset overview
 3. **Preprocessing** – TotalCharges fix, target encoding, drop customerID, unify categories, encode features, one-hot encoding
-4. **Feature analysis** – Pearson/Spearman/Kendall correlation heatmaps, Mutual Information; `src/visualization.py` saves charts to `charts/`: [churn_correlation_pearson.png](charts/churn_correlation_pearson.png), [churn_correlation_spearman.png](charts/churn_correlation_spearman.png), [churn_correlation_kendall.png](charts/churn_correlation_kendall.png), [mutual_information.png](charts/mutual_information.png)
+4. **Feature analysis** – Pearson/Spearman/Kendall correlation heatmaps, Mutual Information; `src/visualization.py` saves charts to `charts/`:
+
+   <a href="charts/churn_correlation_pearson.png"><img src="charts/churn_correlation_pearson.png" width="450" alt="Pearson"></a>
+   <a href="charts/churn_correlation_spearman.png"><img src="charts/churn_correlation_spearman.png" width="450" alt="Spearman"></a>
+   <a href="charts/churn_correlation_kendall.png"><img src="charts/churn_correlation_kendall.png" width="450" alt="Kendall"></a>
+   <a href="charts/mutual_information.png"><img src="charts/mutual_information.png" width="450" alt="Mutual Information"></a>
 5. **Feature selection** – Drop useless columns (Mutual Information)
 6. **Model training** – Train and compare models, evaluate metrics
 7. **Save results** – Model comparison table saved to `data/initial_model_results.csv` via `utils.save_to_csv`
-8. **Confusion matrix** – Plot and print TN/FP/FN/TP for Logistic Regression; [confusion_matrix.png](charts/confusion_matrix.png)
+8. **Confusion matrix** – Plot and print TN/FP/FN/TP for Logistic Regression; [confusion_matrix_initial_logistic_regression.png](charts/confusion_matrix_initial_logistic_regression.png)
 
 ## Results
 

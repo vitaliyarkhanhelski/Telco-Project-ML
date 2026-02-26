@@ -140,7 +140,7 @@ def plot_confusion_matrix(y_true, y_pred, title="Confusion Matrix - Logistic Reg
 
     plt.tight_layout()
     CHARTS_DIR.mkdir(parents=True, exist_ok=True)
-    plt.savefig(CHARTS_DIR / "confusion_matrix.png", bbox_inches="tight", dpi=300)
+    plt.savefig(CHARTS_DIR / "confusion_matrix_initial_logistic_regression.png", bbox_inches="tight", dpi=300)
     plt.show()
 
-    print("\nConfusion matrix chart saved as 'charts/confusion_matrix.png'")
+    print("\nConfusion matrix chart saved as 'charts/confusion_matrix_initial_logistic_regression.png'")
