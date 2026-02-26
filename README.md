@@ -155,7 +155,7 @@ python -m src.main
 8. **Confusion matrix** – Plot and print TN/FP/FN/TP for Logistic Regression:
 
    <p align="center">
-   <a href="charts/confusion_matrix_initial_logistic_regression.png"><img src="charts/confusion_matrix_initial_logistic_regression.png" width="450" alt="Confusion Matrix"></a>
+   <a href="charts/confusion_matrix_initial_logistic_regression.png"><img src="charts/confusion_matrix_initial_logistic_regression.png" width="450" alt="Logistic Regression Confusion Matrix"></a>
    </p>
 
 ## Results
@@ -168,6 +168,8 @@ After initially testing four algorithms without hyperparameter tuning, the simpl
 | XGBoost | 0.7828 | 0.5160 | 0.6069 | 0.5578 |
 | Decision Tree | 0.7303 | 0.5080 | 0.4922 | 0.5000 |
 | Random Forest | 0.7821 | 0.4893 | 0.6120 | 0.5438 |
+
+---
 
 ### Hyperparameter Tuning Strategy
 
@@ -192,6 +194,51 @@ After establishing the baseline, we will apply Hyperparameter Tuning to optimize
   * `learning_rate`: How big of a step the model takes when learning from its mistakes. A smaller number means it learns slower but much more carefully.
   * `max_depth`: Limits the complexity of each tree it builds.
   * `scale_pos_weight`: XGBoost's own version of the "pay attention to the minority" rule. It balances the scales between the people who stay and the people who leave.
+
+### Results After Hyperparameter Tuning (Grid Search)
+
+Tuning was optimized for **Recall** to catch as many churning customers as possible:
+
+| Model | Accuracy | Recall | Precision | F1-Score | Best Params |
+|-------|----------|--------|-----------|----------|-------------|
+| XGBoost | 0.6274 | **0.9305** | 0.4109 | 0.5700 | learning_rate=0.01, max_depth=3, scale_pos_weight=5 |
+| Decision Tree | 0.7488 | 0.8048 | 0.5172 | 0.6297 | max_depth=5, min_samples_split=2, class_weight='balanced' |
+| Random Forest | 0.7417 | 0.8048 | 0.5084 | 0.6232 | max_depth=5, n_estimators=50, class_weight='balanced' |
+| Logistic Regression | 0.7331 | 0.7968 | 0.4983 | 0.6132 | C=0.1, class_weight='balanced', penalty='l2' |
+
+### 📊 Hyperparameter Tuning Results & Business Insights
+
+After running `GridSearchCV` to optimize our models for **Recall**, we gained several crucial business and technical insights:
+
+**1. The XGBoost Trap (The "Paranoid Guard" Effect)**
+While XGBoost achieved an outstanding Recall of 93%, its Precision plummeted to 41%, and overall Accuracy dropped to 62%. 
+* **Why?** The `scale_pos_weight: 5` parameter forced the model to treat churning customers as 5 times more important than loyal ones. The model acted like a paranoid security guard—it caught almost every leaving customer, but generated a massive amount of false alarms. In a real business scenario, this would lead to financial losses by giving away retention discounts to customers who never intended to leave.
+
+**2. The True Winners: Decision Tree & Random Forest (The Sweet Spot)**
+Decision Tree and Random Forest emerged as the most balanced and practical models, leading with the highest F1-Score (~63%). 
+* **Recall skyrocketed to ~80%** (a massive leap from our 55% baseline!).
+* **Precision stabilized at ~51%** (an acceptable and manageable business risk).
+These models found the ideal compromise: we successfully identify 8 out of 10 churning customers while keeping false alarms under control.
+
+**3. Class Balancing Worked Perfectly**
+As strategically planned, we paid a small "tax" in overall Accuracy (which dropped from ~80% to ~74%). By utilizing the `class_weight='balanced'` parameter, we forced the algorithms to stop "lazily" predicting the majority class (loyal customers). We deliberately sacrificed raw, misleading accuracy to maximize actual business value (Recall).
+
+**4. Simplicity Over Complexity (Preventing Overfitting)**
+The `GridSearchCV` automation consistently selected simpler configurations, proving that overly complex models are not always better:
+* Tree-based models capped at `max_depth: 5`, refusing to build deep, overly complicated rules.
+* Logistic Regression selected `C: 0.1` (strong regularization), meaning it preferred a generalized, simple approach to avoid overfitting on the training data.
+
+---
+
+### 🎯 Final Project Conclusion
+
+Our initial Logistic Regression baseline provided a solid general foundation. However, by strategically applying hyperparameter tuning and addressing class imbalance, we successfully aligned the algorithms with our primary business goal. 
+
+The tuned **Decision Tree** and **Random Forest** models proved to be the most effective, dramatically **increasing our churn detection rate (Recall) from a baseline of 55% to an impressive 80%**. This translates directly into actionable business value, allowing the telecom company to proactively target and retain significantly more at-risk customers without wasting the marketing budget on false alarms.
+
+<p align="center">
+  <a href="charts/confusion_matrix_tuned_random_forest.png"><img src="charts/confusion_matrix_tuned_random_forest.png" width="450" alt="Random Forest Confusion Matrix"></a>
+</p>
 
 ## Final Evaluation
 

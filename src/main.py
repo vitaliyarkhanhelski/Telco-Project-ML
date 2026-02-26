@@ -37,10 +37,16 @@ def main() -> None:
     # Model Training & Evaluation
     X_train, X_test, y_train, y_test = model_trainer.split_data(df)
     results_df = model_trainer.train_and_compare_models(X_train, X_test, y_train, y_test)
-    utils.save_to_csv(results_df, "initial_model_results.csv")
+    # utils.save_to_csv(results_df, "initial_model_results.csv")
 
-    # Plot logistic regression confusion matrix
-    model_trainer.plot_logistic_regression_confusion_matrix(
+    # model_trainer.plot_logistic_regression_confusion_matrix(
+    #     X_train, X_test, y_train, y_test
+    # )
+
+    tuned_results_df = model_trainer.tune_hyperparameters(X_train, X_test, y_train, y_test)
+    # utils.save_to_csv(tuned_results_df, "tuned_model_results.csv")
+
+    model_trainer.plot_tuned_random_forest_confusion_matrix(
         X_train, X_test, y_train, y_test
     )
 
