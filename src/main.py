@@ -12,7 +12,7 @@ import pandas as pd
 pd.set_option("display.max_columns", None)
 
 # Project root on path (so "from src.*" imports work for both run modes)
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent if "__file__" in dir() else Path.cwd()
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
