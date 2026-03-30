@@ -16,12 +16,12 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent if "__file__" in dir() el
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-import src.data_analyzer as data_analyzer  # noqa: E402
-import src.data_loader as data_loader  # noqa: E402
-import src.utils as utils  # noqa: E402
-import src.data_preprocessing as data_preprocessing  # noqa: E402
-import src.visualization as visualization  # noqa: E402
-import src.model_trainer as model_trainer  # noqa: E402
+import src.data_analyzer as data_analyzer
+import src.data_loader as data_loader
+import src.utils as utils
+import src.data_preprocessing as data_preprocessing
+import src.visualization as visualization
+import src.model_trainer as model_trainer
 
 
 def main() -> None:
@@ -41,7 +41,7 @@ def main() -> None:
     # Model Training & Evaluation
     X_train, X_test, y_train, y_test = model_trainer.split_data(df)
     results_df = model_trainer.train_and_compare_models(X_train, X_test, y_train, y_test)
-    # utils.save_to_csv(results_df, "initial_model_results.csv")
+    utils.save_to_csv(results_df, "initial_model_results.csv")
 
     y_pred_log_reg = model_trainer.plot_logistic_regression_confusion_matrix(X_train, X_test, y_train, y_test)
 

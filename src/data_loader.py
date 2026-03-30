@@ -1,19 +1,21 @@
 """Data loading utilities."""
 
-import kaggle
 import pandas as pd
 from dotenv import load_dotenv
 
-from src.settings import DATA_DIR, DATASET_FILENAME, PROJECT_ROOT
+from src.settings import DATA_DIR, DATASET_FILENAME, KAGGLE_DATASET, PROJECT_ROOT
 
+# Load .env BEFORE importing kaggle so credentials are in os.environ when kaggle initializes
 load_dotenv(PROJECT_ROOT / ".env")
+
+import kaggle  # noqa: E402
 
 
 def download_dataset() -> None:
     """Download the Telco Customer Churn dataset from Kaggle to the data folder."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     kaggle.api.dataset_download_files(
-        "blastchar/telco-customer-churn", path=str(DATA_DIR), unzip=True
+        KAGGLE_DATASET, path=str(DATA_DIR), unzip=True
     )
 
 

@@ -3,7 +3,7 @@
 import pandas as pd
 from ydata_profiling import ProfileReport
 
-from src.settings import REPORTS_DIR
+from src.settings import REPORT_FILENAME, REPORTS_DIR
 
 
 def display_unique_values_for_object_columns(df: pd.DataFrame) -> None:
@@ -35,14 +35,8 @@ def dataset_overview(df: pd.DataFrame) -> None:
     print('')
 
 
-def run_initial_analysis(df: pd.DataFrame) -> None:
-    """Run initial data analysis: generate report and dataset overview."""
-    dataset_overview(df)
-    generate_report(df)
-
-
 def generate_report(
-    df: pd.DataFrame, report_name: str = "Telco_Customer_Churn_report.html"
+        df: pd.DataFrame, report_name: str = REPORT_FILENAME
 ) -> None:
     """Generate a ydata-profiling HTML report for the dataset. Saves to reports/ folder."""
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -59,3 +53,10 @@ def generate_report(
     )
     report.to_file(str(output_path))
     print("\n'Telco Customer Churn' report was generated and saved to:", output_path)
+
+
+def run_initial_analysis(df: pd.DataFrame) -> None:
+    """Run initial data analysis: generate report and dataset overview."""
+    dataset_overview(df)
+    generate_report(df)
+

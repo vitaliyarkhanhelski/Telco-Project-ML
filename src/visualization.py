@@ -7,7 +7,7 @@ from sklearn.feature_selection import mutual_info_classif
 from sklearn.metrics import confusion_matrix
 from matplotlib.colors import ListedColormap
 
-from src.settings import CHARTS_DIR
+from src.settings import CHARTS_DIR, EDA_DIR, PROJECT_ROOT
 
 
 def _plot_correlation_heatmap(
@@ -31,7 +31,6 @@ def _plot_correlation_heatmap(
     plt.tight_layout()
     CHARTS_DIR.mkdir(parents=True, exist_ok=True)
     plt.savefig(CHARTS_DIR / filename, bbox_inches="tight", dpi=300)
-    plt.show()
 
 
 def plot_pearson_correlation(df: pd.DataFrame) -> None:
@@ -96,7 +95,7 @@ def plot_mutual_information(df: pd.DataFrame) -> None:
     plt.tight_layout()
     CHARTS_DIR.mkdir(parents=True, exist_ok=True)
     plt.savefig(CHARTS_DIR / "mutual_information.png", bbox_inches="tight", dpi=300)
-    plt.show()
+    plt.close()
 
     print("\nExact Mutual Information results:")
     print(mi_scores_series)
@@ -159,7 +158,7 @@ def plot_confusion_matrix(y_true, y_pred, title, filename):
     plt.tight_layout()
     CHARTS_DIR.mkdir(parents=True, exist_ok=True)
     plt.savefig(CHARTS_DIR / filename, bbox_inches="tight", dpi=300)
-    plt.show()
+    plt.close()
 
     print(f"\nConfusion matrix chart saved as 'charts/{filename}'")
 
@@ -171,9 +170,9 @@ def _plot_contract_churn(df: pd.DataFrame) -> None:
     plt.title("Churn by Contract Type", fontsize=14, fontweight="bold")
     plt.ylabel("Number of Customers")
     plt.tight_layout()
-    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
-    plt.savefig(CHARTS_DIR / "eda_1_contract.png", bbox_inches="tight", dpi=300)
-    plt.show()
+    EDA_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(EDA_DIR / "eda_1_contract.png", bbox_inches="tight", dpi=300)
+    plt.close()
 
 
 def _plot_internet_churn(df: pd.DataFrame) -> None:
@@ -183,9 +182,9 @@ def _plot_internet_churn(df: pd.DataFrame) -> None:
     plt.title("Churn by Internet Service", fontsize=14, fontweight="bold")
     plt.ylabel("Number of Customers")
     plt.tight_layout()
-    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
-    plt.savefig(CHARTS_DIR / "eda_2_internet.png", bbox_inches="tight", dpi=300)
-    plt.show()
+    EDA_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(EDA_DIR / "eda_2_internet.png", bbox_inches="tight", dpi=300)
+    plt.close()
 
 
 def _plot_tenure_churn(df: pd.DataFrame) -> None:
@@ -195,9 +194,9 @@ def _plot_tenure_churn(df: pd.DataFrame) -> None:
     plt.title("Tenure vs Churn (Customer Loyalty)", fontsize=14, fontweight="bold")
     plt.ylabel("Tenure (Months)")
     plt.tight_layout()
-    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
-    plt.savefig(CHARTS_DIR / "eda_3_tenure.png", bbox_inches="tight", dpi=300)
-    plt.show()
+    EDA_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(EDA_DIR / "eda_3_tenure.png", bbox_inches="tight", dpi=300)
+    plt.close()
 
 
 def _plot_charges_churn(df: pd.DataFrame) -> None:
@@ -207,9 +206,9 @@ def _plot_charges_churn(df: pd.DataFrame) -> None:
     plt.title("Monthly Charges vs Churn", fontsize=14, fontweight="bold")
     plt.ylabel("Monthly Charges (USD)")
     plt.tight_layout()
-    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
-    plt.savefig(CHARTS_DIR / "eda_4_charges.png", bbox_inches="tight", dpi=300)
-    plt.show()
+    EDA_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(EDA_DIR / "eda_4_charges.png", bbox_inches="tight", dpi=300)
+    plt.close()
 
 
 def _plot_payment_churn(df: pd.DataFrame) -> None:
@@ -220,9 +219,9 @@ def _plot_payment_churn(df: pd.DataFrame) -> None:
     plt.ylabel("Number of Customers")
     plt.xticks(rotation=15)
     plt.tight_layout()
-    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
-    plt.savefig(CHARTS_DIR / "eda_5_payment.png", bbox_inches="tight", dpi=300)
-    plt.show()
+    EDA_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(EDA_DIR / "eda_5_payment.png", bbox_inches="tight", dpi=300)
+    plt.close()
 
 
 def plot_business_insights(df: pd.DataFrame) -> None:
@@ -236,4 +235,4 @@ def plot_business_insights(df: pd.DataFrame) -> None:
     _plot_charges_churn(df)
     _plot_payment_churn(df)
 
-    print("Saved 5 charts in the 'charts/' folder")
+    print(f"Saved 5 charts in the '{EDA_DIR.relative_to(PROJECT_ROOT)}' folder")

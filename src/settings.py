@@ -2,11 +2,19 @@
 
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+try:
+    PROJECT_ROOT = Path(__file__).resolve().parent.parent
+except NameError:
+    # __file__ is not defined in interactive sessions (e.g. IPython/REPL)
+    PROJECT_ROOT = Path.cwd()
+
 DATA_DIR = PROJECT_ROOT / "data"
 CHARTS_DIR = PROJECT_ROOT / "charts"
+EDA_DIR = CHARTS_DIR / "eda"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 DATASET_FILENAME = "WA_Fn-UseC_-Telco-Customer-Churn.csv"
+KAGGLE_DATASET = "blastchar/telco-customer-churn"
+REPORT_FILENAME = "Telco_Customer_Churn_report.html"
 
 settings = {
     "cols_to_unify": [
