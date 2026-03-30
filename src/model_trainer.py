@@ -11,6 +11,7 @@ from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import confusion_matrix
 
 def split_data(df):
     """Split data into training and test sets (ONLY ONCE!)."""
@@ -209,21 +210,22 @@ def print_business_impact_simulation(y_test, y_pred_baseline, y_pred_tuned):
     LTV = 1000 (Customer Lifetime Value)
     Discount cost = 100
     """
-    from sklearn.metrics import confusion_matrix
 
     cm_base = confusion_matrix(y_test, y_pred_baseline)
     cm_tuned = confusion_matrix(y_test, y_pred_tuned)
 
+    # ravel() flattens the 2x2 confusion matrix into a flat list [TN, FP, FN, TP]
     tn_b, fp_b, fn_b, tp_b = cm_base.ravel()
     tn_t, fp_t, fn_t, tp_t = cm_tuned.ravel()
 
     LTV = 1000
     DISCOUNT_COST = 100
-    PROFIT_FROM_RETENTION = LTV - DISCOUNT_COST
-    COST_OF_FALSE_POSITIVE = DISCOUNT_COST
+    PROFIT_FROM_RETENTION = LTV - DISCOUNT_COST  # we saved the customer but gave a discount
+    COST_OF_FALSE_POSITIVE = DISCOUNT_COST        # unnecessary discount to someone who would stay
+    COST_OF_MISSED_CHURNER = LTV                  # customer left, full LTV lost
 
-    profit_base = (tp_b * PROFIT_FROM_RETENTION) - (fp_b * COST_OF_FALSE_POSITIVE)
-    profit_tuned = (tp_t * PROFIT_FROM_RETENTION) - (fp_t * COST_OF_FALSE_POSITIVE)
+    profit_base = (tp_b * PROFIT_FROM_RETENTION) - (fp_b * COST_OF_FALSE_POSITIVE) - (fn_b * COST_OF_MISSED_CHURNER)
+    profit_tuned = (tp_t * PROFIT_FROM_RETENTION) - (fp_t * COST_OF_FALSE_POSITIVE) - (fn_t * COST_OF_MISSED_CHURNER)
 
     profit_difference = profit_tuned - profit_base
     tp_increase_percent = ((tp_t - tp_b) / tp_b) * 100 if tp_b > 0 else 0
@@ -235,12 +237,14 @@ def print_business_impact_simulation(y_test, y_pred_baseline, y_pred_tuned):
 
     print("1. Baseline model (Logistic Regression):")
     print(f"   - Retained customers (TP): {tp_b} -> Profit: {tp_b * PROFIT_FROM_RETENTION}")
-    print(f"   - False alarms (FP): {fp_b} -> Loss: {fp_b * COST_OF_FALSE_POSITIVE}")
+    print(f"   - False alarms (FP):       {fp_b} -> Loss: {fp_b * COST_OF_FALSE_POSITIVE}")
+    print(f"   - Missed churners (FN):    {fn_b} -> Loss: {fn_b * COST_OF_MISSED_CHURNER}")
     print(f"   - Net profit: {profit_base}\n")
 
-    print("2. Tuned model (Random Forest):")
+    print("2. Tuned model (XGBoost):")
     print(f"   - Retained customers (TP): {tp_t} -> Profit: {tp_t * PROFIT_FROM_RETENTION}")
-    print(f"   - False alarms (FP): {fp_t} -> Loss: {fp_t * COST_OF_FALSE_POSITIVE}")
+    print(f"   - False alarms (FP):       {fp_t} -> Loss: {fp_t * COST_OF_FALSE_POSITIVE}")
+    print(f"   - Missed churners (FN):    {fn_t} -> Loss: {fn_t * COST_OF_MISSED_CHURNER}")
     print(f"   - Net profit: {profit_tuned}\n")
 
     print("-" * 50)

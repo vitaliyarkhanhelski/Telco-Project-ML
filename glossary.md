@@ -30,3 +30,7 @@ This document contains simple, easy-to-understand definitions of the key concept
 * **Recall (Sensitivity):** Out of all the customers who *actually* left, how many did our model successfully catch? (This is the most important score for predicting churn).
 * **Precision:** When our model yells *"This customer will leave!"*, how often is it actually right?
 * **F1-Score:** A combined overall score that finds a healthy balance between Recall and Precision.
+* **TP (True Positive):** Model predicted churn → customer actually churned ✅
+* **TN (True Negative):** Model predicted stay → customer actually stayed ✅
+* **FP (False Positive):** Model predicted churn → customer actually stayed ❌ (false alarm — we sent a discount unnecessarily)
+* **FN (False Negative):** Model predicted stay → customer actually churned ❌ (missed churner — the most costly mistake)

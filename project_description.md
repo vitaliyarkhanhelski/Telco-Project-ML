@@ -85,3 +85,42 @@ This is a **binary classification problem**: given a set of customer features, p
 - **False alarm (FP)** → we offer a discount to someone who would have stayed anyway → small unnecessary cost
 
 In telecom, a missed churner is typically far more expensive than a false alarm — therefore **high Recall = business priority**, and XGBoost is the winner.
+
+### 11. Confusion Matrix for Tuned XGBoost:
+- re-train XGBoost with best params from `tuned_model_results.csv` and visualize its confusion matrix:
+
+|  | Predicted: Stays (0) | Predicted: Churns (1) |
+|---|---|---|
+| **Actual: Stays (0)** | TN = 533 ✅ correctly predicted stays | FP = 502 ❌ false alarms (predicted churn, actually stayed) |
+| **Actual: Churns (1)** | FN = 23 ✅ missed churners (predicted stay, actually churned) | TP = 351 ✅ correctly predicted churns |
+
+Comparison with initial Logistic Regression:
+
+| | Logistic Regression | Tuned XGBoost |
+|---|---|---|
+| **FN (missed churners)** | 164 ❌ | **23 ✅** |
+| **FP (false alarms)** | 109 | 502 |
+| **TP (caught churners)** | 210 | **351** |
+
+**FN dropped from 164 → 23** — XGBoost misses almost no real churners. The cost is more false alarms (502 vs 109) — we send discounts to more customers who would have stayed anyway, but we retain far more real churners. In most business scenarios this trade-off is well worth it.
+
+### 12. Business Impact Simulation:
+- simulate the financial impact of using the tuned XGBoost model vs the baseline Logistic Regression, based on two assumptions:
+  - **Customer LTV = 1000** — revenue lost if a churner is missed
+  - **Discount cost = 100** — cost of sending a retention offer
+
+```
+Net profit = TP × (LTV - discount) - FP × discount - FN × LTV
+           = TP × 900              - FP × 100       - FN × 1000
+```
+
+| | Logistic Regression | Tuned XGBoost |
+|---|---|---|
+| Retained customers (TP) | 210 → profit $189,000 | 351 → profit $315,900 |
+| False alarms (FP) | 109 → loss $10,900 | 502 → loss $50,200 |
+| Missed churners (FN) | 164 → loss $164,000 | 23 → loss $23,000 |
+| **Net profit** | **$14,100** | **$242,700** |
+
+**Tuned XGBoost brings $228,600 more profit** on this test sample (+67.1% more retained customers). The key driver is **FN dropping from 164 → 23** — each missed churner costs full LTV=$1000, so catching 141 more churners alone saves $141,000.
+
+
