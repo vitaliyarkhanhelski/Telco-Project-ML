@@ -44,3 +44,44 @@ This is a **binary classification problem**: given a set of customer features, p
 
 ### 6. Drop useless features:
 - analyze the heatmaps and mutual information chart to identify which features does not have any significant correlation with the target variable `Churn` and drop them, in this case we can drop `StreamingTV`, `PhoneService`, `MultipleLines`, `StreamingMovies`, `DeviceProtection`, `Partner`, and `gender` columns as they have very low correlation with churn and do not provide much predictive power for our model. These features are only providing noise
+
+### 7. Train-test split:
+- split the dataset into training and testing sets
+
+### 8. Train and compare models:
+- scale features using `StandardScaler` (mean=0, std=1) to ensure all features are on equal footing
+- train 4 models: `Logistic Regression`, `Decision Tree`, `Random Forest`, `XGBoost` — all 4 are suitable for **binary classification** (predicting Yes/No). Linear Regression is not used here because it predicts continuous values (e.g. 0.73) rather than discrete classes, and has no natural decision boundary for Yes/No output. These 4 models were chosen to cover a range of complexity: from simple (`Logistic Regression`, `Decision Tree`) to ensemble methods (`Random Forest`, `XGBoost`) which are generally more powerful
+- evaluate each model using 4 metrics:
+  - `Accuracy` — out of all customers, how many did we predict correctly?
+  - `Recall` — out of **100 real churners**, how many did the model catch? (e.g. Recall=0.8 → caught 80, missed 20)
+  - `Precision` — out of **100 customers the model flagged as churners**, how many actually churned? (e.g. Precision=0.6 → 60 real churners, 40 false alarms)
+  - `F1-Score` — balance between Recall and Precision
+- results are sorted by `Recall` (descending) — catching as many churners as possible is the primary business goal
+- save results to `data/initial_model_results.csv` and analyze:
+
+**Logistic Regression won across all 4 metrics** — best Recall (0.55), best Accuracy (0.80), best Precision (0.65), and best F1-Score (0.60). Surprisingly the simplest model outperformed all ensemble methods.
+
+### 9. Confusion Matrix for Logistic Regression:
+- re-train Logistic Regression once again and visualize its predictions as a **Confusion Matrix** — a 2x2 table showing exactly where the model is right and where it makes mistakes:
+
+|  | Predicted: Stays (0) | Predicted: Churns (1) |
+|---|---|---|
+| **Actual: Stays (0)** | TN = 926 ✅ correctly predicted stays | FP = 109 ❌ false alarms (predicted churn, actually stayed) |
+| **Actual: Churns (1)** | FN = 164 ❌ missed churners (predicted stay, actually churned) | TP = 210 ✅ correctly predicted churns |
+
+- **FN (164 missed churners)** is the most costly business mistake — these are real customers who left but we never tried to retain them
+
+### 10. Tune hyperparameters for all the models:
+- define a set of hyperparameter values to try for each model (e.g. for Random Forest: `n_estimators`: [50, 100, 200], `max_depth`: [5, 10, 15])
+- use `GridSearchCV` with `cv=5` (Cross-Validation) and `scoring='recall'` to find the best hyperparameters for each model, optimizing for `Recall` to catch as many churners as possible
+- save results to `data/tuned_model_results.csv` and analyze:
+
+**XGBoost wins on Recall (0.93)** — catches 93 out of every 100 real churners. However this comes with a trade-off:
+- **Accuracy = 0.62** — model is wrong on 38% of all customers
+- **Precision = 0.41** — out of every 100 customers flagged as churners, only 41 actually churn → 59 false alarms
+
+**Is it worth it?** It depends on the business cost:
+- **Missed churner (FN)** → customer leaves, revenue lost permanently
+- **False alarm (FP)** → we offer a discount to someone who would have stayed anyway → small unnecessary cost
+
+In telecom, a missed churner is typically far more expensive than a false alarm — therefore **high Recall = business priority**, and XGBoost is the winner.

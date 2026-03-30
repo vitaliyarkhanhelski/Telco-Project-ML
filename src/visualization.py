@@ -124,30 +124,30 @@ def plot_confusion_matrix(y_true, y_pred, title, filename):
         [f"{cm[1, 0]}\n({cm[1, 0] / total * 100:.1f}%)", f"{cm[1, 1]}\n({cm[1, 1] / total * 100:.1f}%)"],
     ]
 
-    # 1. Definiujemy biznesowe kolory (Hex)
-    color_tn = "#A5D6A7"  # 0: Jasnozielony (TN)
-    color_fp = "#FFE082"  # 1: Jasnożółty   (FP)
-    color_fn = "#EF9A9A"  # 2: Jasnoczerwony(FN)
-    color_tp = "#A5D6A7"  # 3: Jasnozielony (TP)
-    
-    # Tworzymy paletę z dokładnie tymi 4 kolorami w odpowiedniej kolejności
+    # Define business colors (Hex)
+    color_tn = "#A5D6A7"  # 0: Light green  (TN)
+    color_fp = "#FFE082"  # 1: Light yellow  (FP)
+    color_fn = "#EF9A9A"  # 2: Light red     (FN)
+    color_tp = "#A5D6A7"  # 3: Light green   (TP)
+
+    # Create a palette with exactly these 4 colors in the correct order
     custom_cmap = ListedColormap([color_tn, color_fp, color_fn, color_tp])
     
-    # Tworzymy macierz indeksów, żeby Seaborn wiedział, gdzie dać jaki kolor
-    color_indices = [[0, 1], 
+    # Create an index matrix so Seaborn knows which color to use where
+    color_indices = [[0, 1],
                      [2, 3]]
 
     plt.figure(figsize=(8, 6))
 
-    # 1. Rysujemy heatmapę na białym tle (żeby zresetować domyślne kolory)
+    # Draw heatmap with custom colors
     sns.heatmap(
         color_indices,       
         annot=annotations,
         fmt="",
         cmap=custom_cmap,    
         cbar=False,
-        xticklabels=["Stays (No)", "Churns (Yes)"],
-        yticklabels=["Stays (No)", "Churns (Yes)"],
+        xticklabels=["Stays (0)", "Churns (1)"],
+        yticklabels=["Stays (0)", "Churns (1)"],
         annot_kws={"size": 13, "weight": "bold"}
     )
 

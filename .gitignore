@@ -20,10 +20,6 @@ build/
 *.swp
 *.swo
 
-# Data (downloaded from Kaggle)
-data/
-*.csv
-
 # Generated reports
 reports/
 
