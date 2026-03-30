@@ -11,6 +11,7 @@ except NameError:
 DATA_DIR = PROJECT_ROOT / "data"
 CHARTS_DIR = PROJECT_ROOT / "charts"
 EDA_DIR = CHARTS_DIR / "eda"
+CORRELATION_DIR = CHARTS_DIR / "correlation"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 DATASET_FILENAME = "WA_Fn-UseC_-Telco-Customer-Churn.csv"
 KAGGLE_DATASET = "blastchar/telco-customer-churn"

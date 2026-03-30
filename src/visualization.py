@@ -7,7 +7,7 @@ from sklearn.feature_selection import mutual_info_classif
 from sklearn.metrics import confusion_matrix
 from matplotlib.colors import ListedColormap
 
-from src.settings import CHARTS_DIR, EDA_DIR, PROJECT_ROOT
+from src.settings import CHARTS_DIR, CORRELATION_DIR, EDA_DIR, PROJECT_ROOT
 
 
 def _plot_correlation_heatmap(
@@ -29,8 +29,8 @@ def _plot_correlation_heatmap(
     )
     plt.title(title, pad=20)
     plt.tight_layout()
-    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
-    plt.savefig(CHARTS_DIR / filename, bbox_inches="tight", dpi=300)
+    CORRELATION_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(CORRELATION_DIR / filename, bbox_inches="tight", dpi=300)
 
 
 def plot_pearson_correlation(df: pd.DataFrame) -> None:
@@ -86,7 +86,7 @@ def plot_mutual_information(df: pd.DataFrame) -> None:
     mi_scores_series = mi_scores_series.sort_values(ascending=False)
 
     plt.figure(figsize=(10, 8))
-    sns.barplot(x=mi_scores_series.values, y=mi_scores_series.index, palette="viridis")
+    sns.barplot(x=mi_scores_series.values, y=mi_scores_series.index, hue=mi_scores_series.index, palette="viridis", legend=False)
 
     plt.title("What affects customer churn (Mutual Information)", pad=20)
     plt.xlabel("Mutual Information score (higher = more important feature)")
