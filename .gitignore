@@ -31,3 +31,12 @@ kaggle.json
 .DS_Store
 Thumbs.db
 src/test.py
+
+# Salesforce DX (not part of this project)
+.sfdx/
+
+# Dataset (large file, download via Kaggle)
+data/WA_Fn-UseC_-Telco-Customer-Churn.csv
+
+# Temporary notes
+TODO_code_improvements.md

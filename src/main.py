@@ -26,39 +26,43 @@ import src.model_trainer as model_trainer
 
 def main() -> None:
     """Main function - project entry point."""
-    # Download dataset
+    # 1. Download dataset
     df = data_loader.load_data()
-    # Dataset initial analysis
+    # 2. EDA, Dataset initial analysis
     data_analyzer.run_initial_analysis(df)
 
-    # Business visualization - Generate charts visualizing churn dependency on different features
+    # 3. EDA, Business visualization - Generate charts visualizing churn dependency on different features
     visualization.plot_business_insights(df)
 
-    # Data preprocessing
+    # 4. Data preprocessing — encode everything (we don't know yet what's useful)
     df = data_preprocessing.clean_and_encode_data(df)
-    # Visualize correlation between features and target variable
+    # 5. Visualize correlation between features and target variable
     visualization.visualize_feature_relationships(df)
 
-    # Feature Selection - remove noisy features after charts analysis
+    # 6. Feature Selection — drop useless columns identified from Mutual Information chart
     df = data_preprocessing.drop_useless_columns(df)
 
     # Model Training & Evaluation
-    # Train-test split
+    # 7. Train-test split
     X_train, X_test, y_train, y_test = model_trainer.split_data(df)
-    # Train and compare models
-    results_df = model_trainer.train_and_compare_models(X_train, X_test, y_train, y_test)
+    # 8. Scale features once — fit on training data, apply to both sets
+    X_train_scaled, X_test_scaled = model_trainer.scale_data(X_train, X_test)
+
+    # 9. Train and compare models
+    results_df = model_trainer.train_and_compare_models(X_train_scaled, X_test_scaled, y_train, y_test)
     utils.save_to_csv(results_df, "initial_model_results.csv")
 
-    # Confusion Matrix for Logistic Regression
-    y_pred_log_reg = model_trainer.plot_logistic_regression_confusion_matrix(X_train, X_test, y_train, y_test)
+    # 10. Confusion Matrix for Logistic Regression (winner)
+    y_pred_log_reg = model_trainer.plot_logistic_regression_confusion_matrix(X_train_scaled, X_test_scaled, y_train, y_test)
 
-    # Tune hyperparameters for all models
-    tuned_results_df = model_trainer.tune_hyperparameters(X_train, X_test, y_train, y_test)
+    # 11. Tune hyperparameters for all models
+    tuned_results_df = model_trainer.tune_hyperparameters(X_train_scaled, X_test_scaled, y_train, y_test)
     utils.save_to_csv(tuned_results_df, "tuned_model_results.csv")
 
-    # Confusion Matrix for tuned XGBoost (winner after tuning)
-    y_pred_xgb_tuned = model_trainer.plot_tuned_xgboost_confusion_matrix(X_train, X_test, y_train, y_test)
+    # 12. Confusion Matrix for tuned XGBoost (winner after tuning)
+    y_pred_xgb_tuned = model_trainer.plot_tuned_xgboost_confusion_matrix(X_train_scaled, X_test_scaled, y_train, y_test)
 
+    # 13. Business impact simulation comparing Logistic Regression and tuned XGBoost
     model_trainer.print_business_impact_simulation(y_test, y_pred_log_reg, y_pred_xgb_tuned)
 
 

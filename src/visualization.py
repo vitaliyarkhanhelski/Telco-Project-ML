@@ -108,7 +108,9 @@ def plot_mutual_information(df: pd.DataFrame) -> None:
 
 def plot_confusion_matrix(y_true, y_pred, title, filename):
     """Plot and save the Confusion Matrix for the model."""
+    # Generate a 2x2 grid comparing actual outcomes vs model predictions
     cm = confusion_matrix(y_true, y_pred)
+    # Flatten the 2x2 matrix into a single line and unpack into separate variables
     tn, fp, fn, tp = cm.ravel()
 
     total = len(y_true)

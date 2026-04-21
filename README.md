@@ -4,6 +4,9 @@
 
 A Python machine learning project for analyzing and predicting customer churn in a telecommunications company, using the [Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/telco-customer-churn) dataset from Kaggle.
 
+📄 [ML Pipeline](pipeline.md) — step-by-step walkthrough of the full pipeline with results  
+📚 [Libraries](libraries.md) — all libraries used in this project
+
 ## Problem Definition
 
 This project focuses on predicting customer churn using a real-world telecom dataset. Customer churn prediction is a critical business problem that helps companies retain customers by identifying those likely to leave.
@@ -64,17 +67,11 @@ telco_project_ML/
 
 ## Setup
 
-### 1. Create a virtual environment
+### 1. Create a conda environment
 
 ```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate (Unix/macOS)
-source venv/bin/activate
-
-# Activate (Windows)
-venv\Scripts\activate
+conda create -n telco_ml python=3.11
+conda activate telco_ml
 ```
 
 ### 2. Install dependencies

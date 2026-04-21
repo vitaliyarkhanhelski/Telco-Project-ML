@@ -1,3 +1,5 @@
+"""Model training, evaluation, hyperparameter tuning, and business impact simulation."""
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -28,12 +30,14 @@ def split_data(df):
     
     return X_train, X_test, y_train, y_test
 
-def train_and_compare_models(X_train, X_test, y_train, y_test):
-    """Train 4 different ML models and compare their results in a table."""
-    
+def scale_data(X_train, X_test):
+    """Fit StandardScaler on training data, apply to both sets. Returns (X_train_scaled, X_test_scaled)."""
     scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    return scaler.fit_transform(X_train), scaler.transform(X_test)
+
+
+def train_and_compare_models(X_train_scaled, X_test_scaled, y_train, y_test):
+    """Train 4 different ML models and compare their results in a table."""
 
     # Define dictionary with our models
     # max_iter=1000 for Logistic Regression to avoid convergence errors
@@ -82,12 +86,8 @@ def train_and_compare_models(X_train, X_test, y_train, y_test):
 
 
 
-def plot_logistic_regression_confusion_matrix(X_train, X_test, y_train, y_test) -> np.ndarray:
+def plot_logistic_regression_confusion_matrix(X_train_scaled, X_test_scaled, y_train, y_test) -> np.ndarray:
     """Train Logistic Regression, plot its confusion matrix and return predictions."""
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-
     log_reg = LogisticRegression(max_iter=1000, random_state=42)
     log_reg.fit(X_train_scaled, y_train)
     y_pred = log_reg.predict(X_test_scaled)
@@ -96,12 +96,8 @@ def plot_logistic_regression_confusion_matrix(X_train, X_test, y_train, y_test) 
     return y_pred
 
 
-def plot_tuned_xgboost_confusion_matrix(X_train, X_test, y_train, y_test) -> np.ndarray:
+def plot_tuned_xgboost_confusion_matrix(X_train_scaled, X_test_scaled, y_train, y_test) -> np.ndarray:
     """Train tuned XGBoost (winner after tuning), plot its confusion matrix and return predictions."""
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-
     # Load best params from tuned_model_results.csv instead of hardcoding
     best_params = utils.get_best_params("tuned_model_results.csv", "XGBoost")
 
@@ -117,14 +113,10 @@ def plot_tuned_xgboost_confusion_matrix(X_train, X_test, y_train, y_test) -> np.
     return y_pred
 
 
-def tune_hyperparameters(X_train, X_test, y_train, y_test):
+def tune_hyperparameters(X_train_scaled, X_test_scaled, y_train, y_test):
     """Use GridSearchCV to find the best hyperparameters, optimizing for maximum Recall (catching churners)."""
     print("\n⏳ Starting hyperparameter tuning (GridSearchCV)... This may take a minute!\n")
 
-    # Scale data
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
 
     # Define hyperparameter options for each model
     # class_weight='balanced' automatically penalizes errors on the minority class (Churn=Yes)
@@ -228,7 +220,7 @@ def print_business_impact_simulation(y_test, y_pred_baseline, y_pred_tuned):
     profit_tuned = (tp_t * PROFIT_FROM_RETENTION) - (fp_t * COST_OF_FALSE_POSITIVE) - (fn_t * COST_OF_MISSED_CHURNER)
 
     profit_difference = profit_tuned - profit_base
-    tp_increase_percent = ((tp_t - tp_b) / tp_b) * 100 if tp_b > 0 else 0
+    tp_increase_percent = ((tp_t - tp_b) / tp_b) * 100 if tp_b > 0 else 0 # Calculate % improvement
 
     print("\n" + "=" * 50)
     print("Business simulation (model ROI)")

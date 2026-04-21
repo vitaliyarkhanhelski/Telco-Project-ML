@@ -26,6 +26,12 @@ def drop_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
     return drop_columns(df, [column])
 
 
+def drop_useless_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop columns rated as useless by Mutual Information. Uses drop_columns internally."""
+    cols_to_drop = settings.get("useless_cols_to_drop", [])
+    return drop_columns(df, cols_to_drop)
+
+
 def unify_redundant_categories(df: pd.DataFrame) -> pd.DataFrame:
     """Unify redundant service categories: 'No internet service' -> 'No', 'No phone service' -> 'No'."""
     cols_to_unify = settings.get("cols_to_unify", [])
@@ -35,18 +41,12 @@ def unify_redundant_categories(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def drop_useless_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Drop columns rated as useless by Mutual Information. Uses drop_columns internally."""
-    cols_to_drop = settings.get("useless_cols_to_drop", [])
-    return drop_columns(df, cols_to_drop)
-
-
 def preprocess_TotalCharges_column(df: pd.DataFrame) -> pd.DataFrame:
     """Convert TotalCharges to numeric and fill missing values with 0.
 
     Missing TotalCharges occur when tenure=0 (new customers before first billing cycle).
     """
-    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
+    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce") #NaN for non-convertible values (like empty strings)
     print(df[df["TotalCharges"].isna()][["tenure", "TotalCharges"]])
     df["TotalCharges"] = df["TotalCharges"].fillna(0)
     return df
