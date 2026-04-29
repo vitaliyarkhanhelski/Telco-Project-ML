@@ -51,16 +51,19 @@ All columns are now numeric — correlations work on the full dataset:
 - 80/20 split, `stratify=y` — preserves the 27%/73% churn ratio in both sets
 - Split happens **after** feature selection — test set is never seen during training
 
-## Step 8 — Scaling
+## Step 8 — Scaling (Logistic Regression only)
 - `StandardScaler` fitted **once** on `X_train`, applied to both sets
-- Ensures all features are on equal footing (mean=0, std=1)
+- Applied **only to Logistic Regression** — gradient-based, sensitive to feature scale
+- Tree-based models (Decision Tree, Random Forest, XGBoost) receive **raw unscaled data** — splits on thresholds, scale is irrelevant
 
 ## Step 9 — Baseline Model Training
 4 models trained and compared, sorted by Recall:
+- Logistic Regression uses **Lasso (L1) regularization** (`l1_ratio=1.0, solver='saga'`) — weak features get coefficient = 0
+- Tree-based models (Decision Tree, Random Forest, XGBoost) receive raw unscaled data
 
 | Model | Accuracy | Recall | Precision | F1-Score |
 |---|---|---|---|---|
-| **Logistic Regression** | **0.8027** | **0.5535** | **0.6509** | **0.5983** |
+| **Logistic Regression** | **0.8034** | **0.5535** | **0.6530** | **0.5991** |
 | XGBoost | 0.7828 | 0.5160 | 0.6069 | 0.5578 |
 | Decision Tree | 0.7303 | 0.5080 | 0.4922 | 0.5000 |
 | Random Forest | 0.7821 | 0.4893 | 0.6120 | 0.5438 |
@@ -71,22 +74,25 @@ All columns are now numeric — correlations work on the full dataset:
 
 |  | Predicted: Stays | Predicted: Churns |
 |---|---|---|
-| **Actual: Stays** | TN = 926 ✅ | FP = 109 ❌ |
-| **Actual: Churns** | FN = 164 ❌ | TP = 210 ✅ |
+| **Actual: Stays** | TN = 925 ✅ | FP = 110 ❌ |
+| **Actual: Churns** | FN = 167 ❌ | TP = 207 ✅ |
 
-**164 missed churners (FN)** — the most costly mistake.
+**167 missed churners (FN)** — the most costly mistake.
 
 ## Step 11 — Hyperparameter Tuning
-- `GridSearchCV(cv=5, scoring='recall', n_jobs=-1)` on all 4 models
+- **Optuna** (`n_trials=50`, `scoring='recall'`, TPE Bayesian sampler) replaces GridSearchCV
+- Optuna learns from previous trials which parameter regions are promising — faster and searches continuous ranges
 - `class_weight='balanced'` for sklearn models, `scale_pos_weight≈3` for XGBoost — address 27%/73% class imbalance
+- LR tunes both `C` and `l1_ratio` (0.0=L2/Ridge vs 1.0=L1/Lasso) — Optuna picks the better regularization automatically
 - Results saved to `data/tuned_model_results.csv`
+- Best XGBoost model object returned directly — no need to re-load from CSV
 
 | Model | Accuracy | Recall | Precision | F1-Score |
 |---|---|---|---|---|
 | **XGBoost** | 0.6274 | **0.9305** | 0.4109 | 0.5700 |
-| Decision Tree | 0.7488 | 0.8048 | 0.5172 | 0.6297 |
-| Random Forest | 0.7417 | 0.8048 | 0.5084 | 0.6232 |
-| Logistic Regression | 0.7331 | 0.7968 | 0.4983 | 0.6132 |
+| Decision Tree | 0.6529 | 0.8797 | 0.4256 | 0.5737 |
+| Random Forest | 0.7282 | 0.8155 | 0.4927 | 0.6143 |
+| Logistic Regression | 0.7346 | 0.7914 | 0.5000 | 0.6128 |
 
 **XGBoost wins on Recall (0.93)** — trade-off: lower Precision (0.41), more false alarms.
 
@@ -94,10 +100,10 @@ All columns are now numeric — correlations work on the full dataset:
 
 |  | Predicted: Stays | Predicted: Churns |
 |---|---|---|
-| **Actual: Stays** | TN = 533 ✅ | FP = 502 ❌ |
-| **Actual: Churns** | FN = 23 ✅ | TP = 351 ✅ |
+| **Actual: Stays** | TN = 536 ✅ | FP = 499 ❌ |
+| **Actual: Churns** | FN = 26 ✅ | TP = 348 ✅ |
 
-**FN dropped from 164 → 23** — XGBoost misses almost no real churners.
+**FN dropped from 167 → 26** — XGBoost misses almost no real churners.
 
 ## Step 13 — Business Impact Simulation
 
@@ -108,10 +114,20 @@ Net profit = TP × (LTV - discount) - FP × discount - FN × LTV
 
 | | Logistic Regression | Tuned XGBoost |
 |---|---|---|
-| Retained customers (TP) | 210 → +$189,000 | 351 → +$315,900 |
-| False alarms (FP) | 109 → -$10,900 | 502 → -$50,200 |
-| Missed churners (FN) | 164 → -$164,000 | 23 → -$23,000 |
-| **Net profit** | **$14,100** | **$242,700** |
+| Retained customers (TP) | 207 → +$186,300 | 348 → +$313,200 |
+| False alarms (FP) | 110 → -$11,000 | 499 → -$49,900 |
+| Missed churners (FN) | 167 → -$167,000 | 26 → -$26,000 |
+| **Net profit** | **$8,300** | **$237,300** |
 
-**Tuned XGBoost brings $228,600 more profit** on this test sample. Key driver: FN 164 → 23, each missed churner costs $1,000.
+**Tuned XGBoost brings $229,000 more profit** on this test sample. Key driver: FN 167 → 26, each missed churner costs $1,000.
 
+## Step 14 — SHAP Feature Importance
+
+Using the tuned XGBoost model to explain **which features drive predictions** and why:
+
+- `shap_summary.png` — global beeswarm: which features matter most across all test customers
+- `shap_dependence_top1.png` / `shap_dependence_top2.png` — dependence plots for the 2 most important features (selected dynamically by mean SHAP value)
+- `shap_force.png` — local Force Plot for the first churner in the test set: which features pushed toward churn prediction
+- `shap_waterfall.png` — Waterfall breakdown for the same churner
+
+All charts saved to `charts/shap/`.

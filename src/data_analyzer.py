@@ -11,7 +11,7 @@ def display_unique_values_for_object_columns(df: pd.DataFrame) -> None:
     for col in df.select_dtypes(include="object").columns:
         print(f"{col}: {df[col].unique()}")
 
-
+#todo remove
 def dataset_overview(df: pd.DataFrame) -> None:
     """Print initial dataset exploration: describe, head, missing values, dtypes, and unique values for object columns."""
     print(df.head())
@@ -54,9 +54,9 @@ def generate_report(
     report.to_file(str(output_path))
     print("\n'Telco Customer Churn' report was generated and saved to:", output_path)
 
-
+#todo remove
 def run_initial_analysis(df: pd.DataFrame) -> None:
     """Run initial data analysis: generate report and dataset overview."""
-    dataset_overview(df)
+    dataset_overview(df) #todo remove
     generate_report(df)
 

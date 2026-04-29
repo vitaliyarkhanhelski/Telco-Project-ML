@@ -21,11 +21,30 @@ This document contains simple, easy-to-understand definitions of the key concept
 ## 4. Machine Learning Algorithms
 * **Baseline Model:** A basic, simple model used as a starting point. We use it to see if more complex models are actually doing a better job or just overcomplicating things.
 * **Logistic Regression:** A simple math model that predicts the probability of a Yes/No answer (like *"Will the customer leave?"*). Internally, it assigns a **weight** to each feature (e.g., *monthly charges* gets a high weight, *gender* gets a low one), multiplies them together, and feeds the result into a **sigmoid function** — an S-shaped curve that squashes any number into a value between 0 and 1. That value is the predicted probability: e.g. 0.82 means *"82% chance this customer churns"*. If the probability is above 0.5, the model predicts "Yes" (churn); otherwise "No" (stays). The weights are learned automatically during training by minimizing prediction errors.
-* **Decision Tree:** A model that makes decisions by asking a series of Yes/No questions, looking very much like a simple flowchart .
+* **Decision Tree:** A model that makes decisions by asking a series of Yes/No questions, looking very much like a simple flowchart.
 * **Random Forest:** A "forest" made of many different Decision Trees. They all vote on the final answer, which makes the prediction much more accurate and stable.
 * **XGBoost:** A very powerful, advanced algorithm where multiple trees are built one after another, and each new tree tries to fix the mistakes made by the previous one.
 
-## 5. Evaluation Metrics
+## 5. Regularization
+* **Regularization:** A technique that penalizes overly complex models to prevent overfitting — the model is forced to keep its weights small and focus only on the most important features.
+* **Lasso (L1 Regularization):** A type of regularization that adds a penalty equal to the **absolute value** of each weight. The key property: weak, unimportant features get their weight pushed all the way to **zero** — they are effectively removed from the model automatically. Controlled by parameter `C` (inverse of penalty strength): small `C` = strong penalty = more features zeroed out. Used in our Logistic Regression with `penalty='l1', solver='liblinear'`.
+* **Ridge (L2 Regularization):** Similar to Lasso, but the penalty is based on the **square** of each weight. Instead of zeroing features out, it just shrinks all weights proportionally. Features are never fully removed — just reduced. Used as an alternative to L1 in hyperparameter tuning.
+
+## 6. Hyperparameter Tuning
+* **Hyperparameters:** Settings that control how a model learns — they are set before training and are not learned from data (e.g. `max_depth` for Decision Tree, `learning_rate` for XGBoost).
+* **Cross-Validation (CV):** A technique for evaluating model quality without touching the test set. The training data is split into `k` equal parts (folds). The model is trained `k` times — each time on `k-1` folds and tested on the remaining 1. The final score is the average across all folds. We use `cv=5` — 5 rounds, each using a different 20% as validation.
+* **GridSearchCV:** Exhaustive search — tries every possible combination of hyperparameters from a predefined list. Slow for large grids but guaranteed to find the best combination within the list.
+* **Optuna:** Intelligent hyperparameter tuning library using **Bayesian optimization (TPE sampler)**. Instead of trying all combinations, it learns from previous trials which parameter regions are promising and focuses search there. Faster than GridSearch and can search continuous ranges (e.g. `C` from 0.01 to 10.0 instead of a fixed list).
+
+## 7. Model Explainability
+* **SHAP (SHapley Additive exPlanations):** A method that explains individual model predictions by calculating how much each feature contributed to pushing the prediction above or below the average. Based on **Shapley values** from game theory.
+* **Shapley Values:** For each prediction, SHAP assigns a score to every feature: positive score = this feature pushed the model toward predicting churn; negative score = pushed toward staying. The sum of all SHAP values equals the difference between the prediction and the average prediction across all customers.
+* **SHAP Summary Plot:** A global view — shows which features matter most across all predictions in the test set. Each dot is one customer; color shows the feature value (red = high, blue = low); position on X-axis shows SHAP impact.
+* **SHAP Dependence Plot:** Shows how one specific feature (e.g. `tenure`) affects predictions across its full range of values — reveals non-linear patterns (e.g. churn drops sharply after 12 months of tenure).
+* **SHAP Force Plot:** A local explanation for one specific customer — shows which features pushed the prediction up (toward churn) and which pushed it down (toward staying), and by how much.
+* **SHAP Waterfall Plot:** Same as Force Plot but displayed as a vertical waterfall chart — each bar shows the contribution of one feature, starting from the average prediction and ending at the final prediction for this customer.
+
+## 8. Evaluation Metrics
 * **Confusion Matrix:** A 2×2 table that shows exactly where the model is right and where it makes mistakes. Rows = what actually happened, Columns = what the model predicted. Four cells: TN (correctly predicted stays), FP (false alarms), FN (missed churners), TP (correctly predicted churns). It is the foundation for all other metrics — Accuracy, Recall, Precision, and F1 are all calculated from these 4 numbers.
 * **Accuracy:** Overall, out of all the model's guesses, what percentage was exactly right? E.g. 1000 customers total: 700 stayed → model correctly predicted 650 of them; 300 churned → model correctly predicted 150 of them. Total correct: 650 + 150 = 800. Accuracy = 800 / 1000 = **80%**.
 * **Recall (Sensitivity):** Out of all the customers who *actually* left, how many did our model successfully catch? (This is the most important score for predicting churn). E.g. 1000 customers actually churned → model correctly flagged 800 of them. Recall = 800 / 1000 = **80%**. The remaining 200 were missed (FN) — the most costly mistake.

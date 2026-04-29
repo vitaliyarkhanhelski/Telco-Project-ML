@@ -18,7 +18,6 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 import src.data_analyzer as data_analyzer
 import src.data_loader as data_loader
-import src.utils as utils
 import src.data_preprocessing as data_preprocessing
 import src.visualization as visualization
 import src.model_trainer as model_trainer
@@ -29,7 +28,7 @@ def main() -> None:
     # 1. Download dataset
     df = data_loader.load_data()
     # 2. EDA, Dataset initial analysis
-    data_analyzer.run_initial_analysis(df)
+    data_analyzer.run_initial_analysis(df)# todo invoke generate_report directly
 
     # 3. EDA, Business visualization - Generate charts visualizing churn dependency on different features
     visualization.plot_business_insights(df)
@@ -45,25 +44,24 @@ def main() -> None:
     # Model Training & Evaluation
     # 7. Train-test split
     X_train, X_test, y_train, y_test = model_trainer.split_data(df)
-    # 8. Scale features once — fit on training data, apply to both sets
-    X_train_scaled, X_test_scaled = model_trainer.scale_data(X_train, X_test)
 
-    # 9. Train and compare models
-    results_df = model_trainer.train_and_compare_models(X_train_scaled, X_test_scaled, y_train, y_test)
-    utils.save_to_csv(results_df, "initial_model_results.csv")
+    # 8. Train and compare models — returns y_pred for Logistic Regression (baseline winner)
+    y_pred_log_reg = model_trainer.train_and_compare_models(X_train, X_test, y_train, y_test)
 
-    # 10. Confusion Matrix for Logistic Regression (winner)
-    y_pred_log_reg = model_trainer.plot_logistic_regression_confusion_matrix(X_train_scaled, X_test_scaled, y_train, y_test)
+    # 9. Confusion Matrix for Logistic Regression (winner)
+    model_trainer.plot_logistic_regression_confusion_matrix(y_test, y_pred_log_reg)
 
-    # 11. Tune hyperparameters for all models
-    tuned_results_df = model_trainer.tune_hyperparameters(X_train_scaled, X_test_scaled, y_train, y_test)
-    utils.save_to_csv(tuned_results_df, "tuned_model_results.csv")
+    # 10. Tune hyperparameters for all models — returns tuned XGBoost model and its predictions
+    xgb_tuned_model, y_pred_xgb_tuned = model_trainer.tune_hyperparameters(X_train, X_test, y_train, y_test)
 
-    # 12. Confusion Matrix for tuned XGBoost (winner after tuning)
-    y_pred_xgb_tuned = model_trainer.plot_tuned_xgboost_confusion_matrix(X_train_scaled, X_test_scaled, y_train, y_test)
+    # 11. Confusion Matrix for tuned XGBoost (winner after tuning)
+    model_trainer.plot_tuned_xgboost_confusion_matrix(y_test, y_pred_xgb_tuned)
 
-    # 13. Business impact simulation comparing Logistic Regression and tuned XGBoost
+    # 12. Business impact simulation comparing Logistic Regression and tuned XGBoost
     model_trainer.print_business_impact_simulation(y_test, y_pred_log_reg, y_pred_xgb_tuned)
+
+    # 13. SHAP Feature Importance — which features drive XGBoost predictions
+    visualization.plot_shap_importance(xgb_tuned_model, X_test, y_test)
 
 
 if __name__ == "__main__":

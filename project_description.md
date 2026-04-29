@@ -49,7 +49,8 @@ This is a **binary classification problem**: given a set of customer features, p
 - split the dataset into training and testing sets
 
 ### 8. Train and compare models:
-- scale features using `StandardScaler` (mean=0, std=1) to ensure all features are on equal footing
+- scale features using `StandardScaler` (mean=0, std=1) **only for Logistic Regression** — tree-based models (Decision Tree, Random Forest, XGBoost) are scale-invariant and receive raw data
+- Logistic Regression uses **Lasso (L1) regularization** (`penalty='l1', solver='liblinear'`) — adds a penalty for large weights, automatically zeroing out unimportant features
 - train 4 models: `Logistic Regression`, `Decision Tree`, `Random Forest`, `XGBoost` — all 4 are suitable for **binary classification** (predicting Yes/No). Linear Regression is not used here because it predicts continuous values (e.g. 0.73) rather than discrete classes, and has no natural decision boundary for Yes/No output. These 4 models were chosen to cover a range of complexity: from simple (`Logistic Regression`, `Decision Tree`) to ensemble methods (`Random Forest`, `XGBoost`) which are generally more powerful
 - evaluate each model using 4 metrics:
   - `Accuracy` — out of all customers, how many did we predict correctly?
@@ -72,8 +73,8 @@ This is a **binary classification problem**: given a set of customer features, p
 - **FN (164 missed churners)** is the most costly business mistake — these are real customers who left but we never tried to retain them
 
 ### 10. Tune hyperparameters for all the models:
-- define a set of hyperparameter values to try for each model (e.g. for Random Forest: `n_estimators`: [50, 100, 200], `max_depth`: [5, 10, 15])
-- use `GridSearchCV` with `cv=5` (Cross-Validation) and `scoring='recall'` to find the best hyperparameters for each model, optimizing for `Recall` to catch as many churners as possible
+- use **Optuna** with `n_trials=50` and `scoring='recall'` (TPE Bayesian sampler) to find the best hyperparameters for each model — Optuna learns from previous trials which parameter regions are promising, making it faster and more flexible than GridSearchCV (can search continuous ranges instead of fixed lists)
+- Logistic Regression tunes both `C` (regularization strength) and `penalty` (l1 vs l2) — Optuna picks the best combination automatically
 - save results to `data/tuned_model_results.csv` and analyze:
 
 **XGBoost wins on Recall (0.93)** — catches 93 out of every 100 real churners. However this comes with a trade-off:
@@ -123,4 +124,8 @@ Net profit = TP × (LTV - discount) - FP × discount - FN × LTV
 
 **Tuned XGBoost brings $228,600 more profit** on this test sample (+67.1% more retained customers). The key driver is **FN dropping from 164 → 23** — each missed churner costs full LTV=$1000, so catching 141 more churners alone saves $141,000.
 
-
+### 13. SHAP Feature Importance:
+- use **SHAP (Shapley values)** to explain which features drive the tuned XGBoost predictions — both globally (across all customers) and locally (for a single churner)
+- **Summary Plot** — global beeswarm chart showing the most impactful features across the entire test set
+- **Dependence Plots** — for the 2 most important features (selected dynamically): shows how each feature's value affects churn probability
+- **Force Plot** and **Waterfall Plot** — local explanation for the first churner in the test set: shows which features pushed the model toward predicting churn for that specific customer

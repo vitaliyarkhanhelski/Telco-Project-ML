@@ -50,7 +50,7 @@ telco_project_ML/
 │   ├── data_loader.py       # Data loading (download, load)
 │   ├── data_analyzer.py     # EDA (report, overview)
 │   ├── data_preprocessing.py# Cleaning, encoding, feature selection
-│   ├── visualization.py     # Correlation, Mutual Information, confusion matrix
+│   ├── visualization.py     # Correlation, Mutual Information, confusion matrix, SHAP
 │   ├── model_trainer.py     # Model training, evaluation, confusion matrix plot
 │   ├── utils.py             # save_to_csv, get_best_params
 │   └── settings.py          # Constants and configuration
@@ -58,8 +58,11 @@ telco_project_ML/
 ├── reports/                 # Generated HTML reports
 ├── charts/
 │   ├── eda/                 # EDA charts (contract, internet, tenure, charges, payment)
-│   └── correlation/         # Correlation heatmaps (pearson, spearman, kendall)
+│   ├── correlation/         # Correlation heatmaps (pearson, spearman, kendall)
+│   └── shap/                # SHAP feature importance charts
 ├── glossary.md              # ML terms reference
+├── pipeline.md              # Step-by-step pipeline walkthrough
+├── libraries.md             # Libraries used in the project
 ├── project_description.md  # Step-by-step project walkthrough
 ├── requirements.txt
 └── README.md
@@ -152,14 +155,14 @@ python -m src.main
    <a href="charts/mutual_information.png"><img src="charts/mutual_information.png" width="380" alt="Mutual Information"></a>
 6. **Feature selection** – Drop useless columns based on Mutual Information scores
 7. **Train-test split** – 80/20 split with stratification
-8. **Model training** – Train and compare 4 models, results saved to `data/initial_model_results.csv`
+8. **Model training** – Train and compare 4 models (Logistic Regression with Lasso/L1, Decision Tree, Random Forest, XGBoost), results saved to `data/initial_model_results.csv`
 9. **Confusion matrix (Logistic Regression)** – Plot TN/FP/FN/TP for the initial winner:
 
    <p align="center">
    <a href="charts/confusion_matrix_initial_logistic_regression.png"><img src="charts/confusion_matrix_initial_logistic_regression.png" width="500" alt="Logistic Regression Confusion Matrix"></a>
    </p>
 
-10. **Hyperparameter tuning** – GridSearchCV optimizing for Recall, results saved to `data/tuned_model_results.csv`
+10. **Hyperparameter tuning** – Optuna (50 trials, TPE Bayesian sampler) optimizing for Recall, results saved to `data/tuned_model_results.csv`
 11. **Confusion matrix (Tuned XGBoost)** – Plot TN/FP/FN/TP for the tuned winner:
 
     <p align="center">
@@ -167,6 +170,13 @@ python -m src.main
     </p>
 
 12. **Business impact simulation** – Compare financial ROI of baseline vs tuned model
+13. **SHAP Feature Importance** – Explain which features drive XGBoost predictions, saved to `charts/shap/`:
+
+    <a href="charts/shap/shap_summary.png"><img src="charts/shap/shap_summary.png" width="380" alt="SHAP Summary"></a>
+    <a href="charts/shap/shap_dependence_top1.png"><img src="charts/shap/shap_dependence_top1.png" width="380" alt="SHAP Dependence Top 1"></a>
+    <a href="charts/shap/shap_dependence_top2.png"><img src="charts/shap/shap_dependence_top2.png" width="380" alt="SHAP Dependence Top 2"></a>
+    <a href="charts/shap/shap_force.png"><img src="charts/shap/shap_force.png" width="380" alt="SHAP Force Plot"></a>
+    <a href="charts/shap/shap_waterfall.png"><img src="charts/shap/shap_waterfall.png" width="380" alt="SHAP Waterfall"></a>
 
 ---
 
@@ -208,11 +218,11 @@ Building a Machine Learning model helps us catch churning customers, but underst
 
 ## Results
 
-After initially testing four algorithms without hyperparameter tuning, the simple, linear **Logistic Regression** model proved to be the best across all 4 metrics.
+After initially testing four algorithms without hyperparameter tuning, the simple, linear **Logistic Regression** model (with Lasso/L1 regularization) proved to be the best across all 4 metrics.
 
 | Model | Accuracy | Recall | Precision | F1-Score |
 |-------|----------|--------|-----------|----------|
-| **Logistic Regression** | **0.8027** | **0.5535** | **0.6509** | **0.5983** |
+| **Logistic Regression** | **0.8034** | **0.5535** | **0.6530** | **0.5991** |
 | XGBoost | 0.7828 | 0.5160 | 0.6069 | 0.5578 |
 | Decision Tree | 0.7303 | 0.5080 | 0.4922 | 0.5000 |
 | Random Forest | 0.7821 | 0.4893 | 0.6120 | 0.5438 |
@@ -221,12 +231,13 @@ After initially testing four algorithms without hyperparameter tuning, the simpl
 
 ### Hyperparameter Tuning Strategy
 
-After establishing the baseline, we applied `GridSearchCV` to optimize all 4 models for **Recall** (catching as many churners as possible). To address class imbalance, `class_weight='balanced'` was used for all sklearn models and `scale_pos_weight` for XGBoost.
+After establishing the baseline, we applied **Optuna** (50 trials, TPE Bayesian sampler) to optimize all 4 models for **Recall** (catching as many churners as possible). To address class imbalance, `class_weight='balanced'` was used for all sklearn models and `scale_pos_weight` for XGBoost.
 
 Key hyperparameters tuned for each model:
 
 * **Logistic Regression:**
   * `C`: Regularization strength — low C = simpler model (ignores noise), high C = fits training data closely (risk of overfitting)
+  * `l1_ratio`: 0.0 = L2/Ridge (shrinks all weights), 1.0 = L1/Lasso (zeros out weak features) — Optuna picks the better one automatically
   * `class_weight='balanced'`: Forces the model to pay extra attention to churning customers (minority class)
 
 * **Decision Tree:**
@@ -244,14 +255,14 @@ Key hyperparameters tuned for each model:
   * `max_depth`: Limits the complexity of each tree
   * `scale_pos_weight`: XGBoost's equivalent of `class_weight='balanced'` — value = count(No) / count(Yes) ≈ 3
 
-### Results After Hyperparameter Tuning (Grid Search)
+### Results After Hyperparameter Tuning (Optuna)
 
 | Model | Accuracy | Recall | Precision | F1-Score | Best Params |
 |-------|----------|--------|-----------|----------|-------------|
-| **XGBoost** | 0.6274 | **0.9305** | 0.4109 | 0.5700 | learning_rate=0.01, max_depth=3, scale_pos_weight=5 |
-| Decision Tree | 0.7488 | 0.8048 | 0.5172 | 0.6297 | max_depth=5, min_samples_split=2, class_weight=balanced |
-| Random Forest | 0.7417 | 0.8048 | 0.5084 | 0.6232 | max_depth=5, n_estimators=50, class_weight=balanced |
-| Logistic Regression | 0.7331 | 0.7968 | 0.4983 | 0.6132 | C=0.1, class_weight=balanced |
+| **XGBoost** | 0.6274 | **0.9305** | 0.4109 | 0.5700 | learning_rate=0.010, max_depth=3, scale_pos_weight=5 |
+| Decision Tree | 0.6529 | 0.8797 | 0.4256 | 0.5737 | max_depth=2, min_samples_split=22 |
+| Random Forest | 0.7282 | 0.8155 | 0.4927 | 0.6143 | n_estimators=50, max_depth=3 |
+| Logistic Regression | 0.7346 | 0.7914 | 0.5000 | 0.6128 | C=0.011, l1_ratio=1.0 |
 
 **XGBoost wins on Recall (0.93)** — catches 93 out of every 100 real churners. The trade-off is lower Precision (0.41) and more false alarms, but in telecom a missed churner costs full LTV=$1000 while a false alarm costs only a $100 discount — making this trade-off well worth it.
 
@@ -261,24 +272,47 @@ Key hyperparameters tuned for each model:
 
 By strategically applying hyperparameter tuning and addressing class imbalance, we successfully aligned the models with our primary business goal — **maximizing Recall**.
 
-The tuned **XGBoost** model dramatically increased our churn detection rate from **55% → 93%**, reducing missed churners from 164 to just 23 on the test set.
+The tuned **XGBoost** model dramatically increased our churn detection rate from **55% → 93%**, reducing missed churners from 167 to just 26 on the test set.
 
 ### 💰 Business Value & ROI Simulation
 
 | | Logistic Regression | Tuned XGBoost |
 |---|---|---|
-| Retained customers (TP) | 210 → profit $189,000 | 351 → profit $315,900 |
-| False alarms (FP) | 109 → loss $10,900 | 502 → loss $50,200 |
-| Missed churners (FN) | 164 → loss $164,000 | 23 → loss $23,000 |
-| **Net profit** | **$14,100** | **$242,700** |
+| Retained customers (TP) | 207 → profit $186,300 | 348 → profit $313,200 |
+| False alarms (FP) | 110 → loss $11,000 | 499 → loss $49,900 |
+| Missed churners (FN) | 167 → loss $167,000 | 26 → loss $26,000 |
+| **Net profit** | **$8,300** | **$237,300** |
 
-**Tuned XGBoost brings $228,600 more profit** on this test sample alone. The key driver is FN dropping from 164 → 23 — each missed churner costs full LTV=$1,000.
+**Tuned XGBoost brings $229,000 more profit** on this test sample alone. The key driver is FN dropping from 167 → 26 — each missed churner costs full LTV=$1,000.
+
+---
+
+### 🔍 SHAP Feature Importance
+
+After tuning, we used **SHAP (Shapley Values)** to explain *which features drive the XGBoost model's predictions* and *why*.
+
+| Chart | What it shows |
+|---|---|
+| **Summary Plot** | Global feature importance — which features matter most across all test customers |
+| **Dependence Plot (top 1 & 2)** | How the top 2 features affect predictions — e.g. how tenure value correlates with churn risk |
+| **Force Plot** | Local explanation for one specific churner — which features pushed the prediction toward churn |
+| **Waterfall Plot** | Same as Force Plot, step-by-step breakdown from baseline to final prediction |
+
+<p align="center">
+<a href="charts/shap/shap_summary.png"><img src="charts/shap/shap_summary.png" width="700" alt="SHAP Summary Plot"></a>
+</p>
+
+<a href="charts/shap/shap_dependence_top1.png"><img src="charts/shap/shap_dependence_top1.png" width="380" alt="SHAP Dependence Top 1"></a>
+<a href="charts/shap/shap_dependence_top2.png"><img src="charts/shap/shap_dependence_top2.png" width="380" alt="SHAP Dependence Top 2"></a>
+
+<a href="charts/shap/shap_force.png"><img src="charts/shap/shap_force.png" width="380" alt="SHAP Force Plot"></a>
+<a href="charts/shap/shap_waterfall.png"><img src="charts/shap/shap_waterfall.png" width="380" alt="SHAP Waterfall"></a>
 
 ---
 
 ## Final Evaluation
 
-This project demonstrates a complete and realistic machine learning pipeline, from data understanding to business-driven model optimization.
+This project demonstrates a complete and realistic machine learning pipeline, from data understanding to business-driven model optimization and explainability.
 
 ## Development Notes
 

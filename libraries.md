@@ -9,8 +9,14 @@
 ## Machine Learning
 | Library | Purpose |
 |---|---|
-| **scikit-learn** (`sklearn`) | ML algorithms (Logistic Regression, Decision Tree, Random Forest), scaling, train/test split, GridSearchCV, metrics |
+| **scikit-learn** (`sklearn`) | ML algorithms (Logistic Regression, Decision Tree, Random Forest), scaling, train/test split, cross-validation, metrics |
 | **xgboost** | XGBoost algorithm — gradient boosting, not part of sklearn but compatible with its interface |
+| **optuna** | Hyperparameter tuning using Bayesian optimization (TPE sampler) — replaces exhaustive GridSearchCV with intelligent trial-based search |
+
+## Explainability
+| Library | Purpose |
+|---|---|
+| **shap** | SHAP (Shapley) values — explains model predictions globally (which features matter most) and locally (why the model predicted churn for a specific customer) |
 
 ## Visualization
 | Library | Purpose |

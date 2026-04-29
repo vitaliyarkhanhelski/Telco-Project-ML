@@ -1,13 +1,15 @@
 """Visualization utilities."""
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
+import shap
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.metrics import confusion_matrix
 from matplotlib.colors import ListedColormap
 
-from src.settings import CHARTS_DIR, CORRELATION_DIR, EDA_DIR, PROJECT_ROOT
+from src.settings import CHARTS_DIR, CORRELATION_DIR, EDA_DIR, PROJECT_ROOT, SHAP_DIR
 
 
 def _plot_correlation_heatmap(
@@ -122,8 +124,8 @@ def plot_confusion_matrix(y_true, y_pred, title, filename):
     print(cm)
 
     annotations = [
-        [f"{cm[0, 0]}\n({cm[0, 0] / total * 100:.1f}%)", f"{cm[0, 1]}\n({cm[0, 1] / total * 100:.1f}%)"],
-        [f"{cm[1, 0]}\n({cm[1, 0] / total * 100:.1f}%)", f"{cm[1, 1]}\n({cm[1, 1] / total * 100:.1f}%)"],
+        [f"TN – True Negative\n{cm[0, 0]} ({cm[0, 0] / total * 100:.1f}%)\nCorrectly predicted Stays", f"FP – False Positive\n{cm[0, 1]} ({cm[0, 1] / total * 100:.1f}%)\nWrongly predicted Churns"],
+        [f"FN – False Negative\n{cm[1, 0]} ({cm[1, 0] / total * 100:.1f}%)\nWrongly predicted Stays", f"TP – True Positive\n{cm[1, 1]} ({cm[1, 1] / total * 100:.1f}%)\nCorrectly predicted Churns"],
     ]
 
     # Define business colors (Hex)
@@ -238,3 +240,73 @@ def plot_business_insights(df: pd.DataFrame) -> None:
     _plot_payment_churn(df)
 
     print(f"Saved 5 charts in the '{EDA_DIR.relative_to(PROJECT_ROOT)}' folder")
+
+
+def plot_shap_importance(xgb_model, X_test: pd.DataFrame, y_test: pd.Series) -> None:
+    """Generate SHAP feature importance charts for the tuned XGBoost model.
+
+    Saves 4 charts to charts/:
+    - shap_summary.png         — global feature importance (beeswarm)
+    - shap_dependence_top1.png — dependence plot for the most important feature
+    - shap_dependence_top2.png — dependence plot for the second most important feature
+    - shap_force.png           — local explanation for a single churner
+    - shap_waterfall.png       — waterfall breakdown for the same churner
+    """
+    CHARTS_DIR.mkdir(parents=True, exist_ok=True)
+    SHAP_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Reset seaborn theme set by plot_business_insights — SHAP plots should have no grid
+    sns.reset_orig()
+
+    explainer   = shap.Explainer(xgb_model, X_test)
+    shap_values = explainer(X_test)
+
+    feature_names = X_test.columns.tolist()
+
+    # --- 1. Summary Plot — global feature importance ---
+    plt.figure(figsize=(14, 8))
+    shap.summary_plot(shap_values, X_test, feature_names=feature_names, show=False, plot_size=None)
+    plt.tight_layout()
+    plt.savefig(SHAP_DIR / "shap_summary.png", bbox_inches="tight", dpi=300)
+    plt.close()
+    print("Saved: charts/shap/shap_summary.png")
+
+    # --- 2. Dependence Plots — top 2 most important features ---
+    mean_shap = np.abs(shap_values.values).mean(axis=0)
+    top2_features = pd.Series(mean_shap, index=feature_names).nlargest(2).index.tolist()
+
+    for i, feature in enumerate(top2_features, start=1):
+        plt.figure()
+        shap.dependence_plot(feature, shap_values.values, X_test, feature_names=feature_names, show=False)
+        plt.tight_layout()
+        plt.savefig(SHAP_DIR / f"shap_dependence_top{i}.png", bbox_inches="tight", dpi=300)
+        plt.close()
+        print(f"Saved: charts/shap/shap_dependence_top{i}.png  (feature: {feature})")
+
+    # --- 3. Force Plot + Waterfall — local explanation for first churner in test set ---
+    y_test_reset  = y_test.reset_index(drop=True)
+    churner_idx   = y_test_reset[y_test_reset == 1].index[0]
+
+    # Force Plot
+    plt.figure()
+    shap.force_plot(
+        explainer.expected_value,
+        shap_values[churner_idx].values,
+        X_test.iloc[churner_idx],
+        feature_names=feature_names,
+        matplotlib=True,
+        show=False,
+    )
+    plt.tight_layout()
+    plt.savefig(SHAP_DIR / "shap_force.png", bbox_inches="tight", dpi=300)
+    plt.close()
+    print(f"Saved: charts/shap/shap_force.png  (churner index: {churner_idx})")
+
+    # Waterfall Plot — SHAP creates its own figure internally, resize it after the fact
+    shap.plots.waterfall(shap_values[churner_idx], show=False)
+    plt.gcf().set_size_inches(14, 8)
+    plt.tight_layout()
+    plt.savefig(SHAP_DIR / "shap_waterfall.png", bbox_inches="tight", dpi=300)
+    plt.close()
+    print(f"Saved: charts/shap/shap_waterfall.png  (churner index: {churner_idx})")
+

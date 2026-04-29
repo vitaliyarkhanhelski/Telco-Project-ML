@@ -12,8 +12,10 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import cross_val_score
 from sklearn.metrics import confusion_matrix
+import optuna
+optuna.logging.set_verbosity(optuna.logging.WARNING)  # suppress per-trial logs, show only final result
 
 def split_data(df):
     """Split data into training and test sets (ONLY ONCE!)."""
@@ -36,27 +38,38 @@ def scale_data(X_train, X_test):
     return scaler.fit_transform(X_train), scaler.transform(X_test)
 
 
-def train_and_compare_models(X_train_scaled, X_test_scaled, y_train, y_test):
-    """Train 4 different ML models and compare their results in a table."""
+def train_and_compare_models(X_train, X_test, y_train, y_test):
+    """Train 4 different ML models and compare their results in a table.
+
+    Logistic Regression is scaled internally (gradient-based, sensitive to feature scale).
+    Tree-based models (Decision Tree, Random Forest, XGBoost) receive raw data.
+    """
+    X_train_scaled, X_test_scaled = scale_data(X_train, X_test)
 
     # Define dictionary with our models
     # max_iter=1000 for Logistic Regression to avoid convergence errors
+    # l1_ratio=1.0: pure Lasso (L1) — zeros out weak features, acts as built-in feature selection
+    # solver='saga': required to support l1_ratio; the only sklearn solver that handles L1/L2/ElasticNet
     # eval_metric='logloss' for XGBoost: monitors training progress using log loss (measures prediction confidence)
     models = {
-        "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
-        "Decision Tree": DecisionTreeClassifier(random_state=42),
-        "Random Forest": RandomForestClassifier(random_state=42),
-        "XGBoost": XGBClassifier(random_state=42, eval_metric='logloss')  # logloss: prediction confidence metric, less the better, model more confident in its predictions
+        "Logistic Regression": (LogisticRegression(l1_ratio=1.0, solver='saga', max_iter=1000, random_state=42), True),
+        "Decision Tree": (DecisionTreeClassifier(random_state=42), False),
+        "Random Forest": (RandomForestClassifier(random_state=42), False),
+        "XGBoost": (XGBClassifier(random_state=42, eval_metric='logloss'), False),
     }
-    
-    results = []
 
-    for name, model in models.items():
+    results = []
+    log_reg_y_pred = None
+
+    for name, (model, use_scaling) in models.items():
+        X_tr = X_train_scaled if use_scaling else X_train
+        X_te = X_test_scaled if use_scaling else X_test
+
         # 1. Training phase (training on historical data)
-        model.fit(X_train_scaled, y_train)
-        
+        model.fit(X_tr, y_train)
+
         # 2. Testing phase (testing on hidden data)
-        y_pred = model.predict(X_test_scaled)
+        y_pred = model.predict(X_te)
 
         # 3. Calculating metrics
         acc = accuracy_score(y_test, y_pred)
@@ -72,7 +85,10 @@ def train_and_compare_models(X_train_scaled, X_test_scaled, y_train, y_test):
             "Precision": round(precision, 4),
             "F1-Score": round(f1, 4)
         })
-        
+
+        if name == "Logistic Regression":
+            log_reg_y_pred = y_pred
+
     # Convert list to readable DataFrame
     results_df = pd.DataFrame(results)
     
@@ -81,120 +97,147 @@ def train_and_compare_models(X_train_scaled, X_test_scaled, y_train, y_test):
     
     print("\n--- MODEL COMPARISON ---")
     print(results_df.to_string())
-    
-    return results_df
+
+    utils.save_to_csv(results_df, "initial_model_results.csv")
+    assert log_reg_y_pred is not None
+    return log_reg_y_pred
 
 
 
-def plot_logistic_regression_confusion_matrix(X_train_scaled, X_test_scaled, y_train, y_test) -> np.ndarray:
-    """Train Logistic Regression, plot its confusion matrix and return predictions."""
-    log_reg = LogisticRegression(max_iter=1000, random_state=42)
-    log_reg.fit(X_train_scaled, y_train)
-    y_pred = log_reg.predict(X_test_scaled)
-
+def plot_logistic_regression_confusion_matrix(y_test, y_pred) -> None:
+    """Plot confusion matrix for Logistic Regression baseline model."""
     visualization.plot_confusion_matrix(y_test, y_pred, "Confusion Matrix - Logistic Regression", "confusion_matrix_initial_logistic_regression.png")
-    return y_pred
 
 
-def plot_tuned_xgboost_confusion_matrix(X_train_scaled, X_test_scaled, y_train, y_test) -> np.ndarray:
-    """Train tuned XGBoost (winner after tuning), plot its confusion matrix and return predictions."""
-    # Load best params from tuned_model_results.csv instead of hardcoding
-    best_params = utils.get_best_params("tuned_model_results.csv", "XGBoost")
-
-    xgb_tuned = XGBClassifier(
-        **best_params,
-        random_state=42,
-        eval_metric='logloss'
-    )
-    xgb_tuned.fit(X_train_scaled, y_train)
-    y_pred = xgb_tuned.predict(X_test_scaled)
-
+def plot_tuned_xgboost_confusion_matrix(y_test, y_pred) -> None:
+    """Plot confusion matrix for the tuned XGBoost model."""
     visualization.plot_confusion_matrix(y_test, y_pred, "Confusion Matrix - Tuned XGBoost", "confusion_matrix_tuned_xgboost.png")
-    return y_pred
 
 
-def tune_hyperparameters(X_train_scaled, X_test_scaled, y_train, y_test):
-    """Use GridSearchCV to find the best hyperparameters, optimizing for maximum Recall (catching churners)."""
-    print("\n⏳ Starting hyperparameter tuning (GridSearchCV)... This may take a minute!\n")
+def tune_hyperparameters(X_train, X_test, y_train, y_test):
+    """Use Optuna to find the best hyperparameters, optimizing for maximum Recall (catching churners).
 
+    Logistic Regression is scaled internally. Tree-based models receive raw data.
+    Each model runs 50 Optuna trials using TPE (Bayesian) sampler.
+    """
+    print("\n⏳ Starting hyperparameter tuning (Optuna)... This may take a minute!\n")
 
-    # Define hyperparameter options for each model
-    # class_weight='balanced' automatically penalizes errors on the minority class (Churn=Yes)
-    param_grid_lr = {
-        'C': [0.01, 0.1, 1, 10],  # Regularization: low C = simpler model (ignores noise), high C = fits training data closely (risk of overfitting)
-        'class_weight': ['balanced']
-    }
-
-    param_grid_dt = {
-        'max_depth': [3, 5, 10, None],    # How deep the tree can grow
-        'min_samples_split': [2, 10, 50], # Minimum samples required to split a node
-        'class_weight': ['balanced']
-    }
-
-    param_grid_rf = {
-        'n_estimators': [50, 100, 200], # Number of trees in the forest
-        'max_depth': [5, 10, 15],       # Depth of each individual tree
-        'class_weight': ['balanced']
-    }
-
-    param_grid_xgb = {
-        'learning_rate': [0.01, 0.1, 0.2], # How fast the model learns (smaller = slower but more accurate)
-        'max_depth': [3, 5, 7], # Maximum depth of a tree, controls model complexity
-        # scale_pos_weight is XGBoost's equivalent of class_weight='balanced'
-        # value = count(No) / count(Yes) = 5174 / 1869 ≈ 3
-        # GridSearchCV will pick the best value from [1, 3, 5]
-        'scale_pos_weight': [1, 3, 5]
-    }
-
-    # Combine models with their parameter grids
-    models_to_tune = {
-        "Logistic Regression": (LogisticRegression(random_state=42, max_iter=1000), param_grid_lr),
-        "Decision Tree": (DecisionTreeClassifier(random_state=42), param_grid_dt),
-        "Random Forest": (RandomForestClassifier(random_state=42), param_grid_rf),
-        "XGBoost": (XGBClassifier(random_state=42, eval_metric='logloss'), param_grid_xgb)
-    }
+    X_train_scaled, X_test_scaled = scale_data(X_train, X_test)
 
     results = []
+    best_xgb_model  = None
+    best_xgb_y_pred = None
 
-    # Run GridSearchCV for each model
-    for name, (model, grid) in models_to_tune.items():
+    # --- Logistic Regression ---
+    def objective_lr(trial):
+        regularization_strength = trial.suggest_float('C', 0.01, 10.0, log=True)
+        l1_ratio                = trial.suggest_categorical('l1_ratio', [0.0, 1.0])  # 0.0 = L2/Ridge, 1.0 = L1/Lasso
+
+        # only Optuna-suggested values in params — statics passed directly to model
+        params = {
+            'C':        regularization_strength,  # inverse of regularization: low = stronger penalty
+            'l1_ratio': l1_ratio,                 # l1_ratio=1.0 (Lasso) zeros out weak features; 0.0 (Ridge) shrinks them
+        }
+        model = LogisticRegression(**params, solver='saga', class_weight='balanced', max_iter=1000, random_state=42)
+        return cross_val_score(model, X_train_scaled, y_train, cv=5, scoring='recall', n_jobs=-1).mean()
+
+    # --- Decision Tree ---
+    def objective_dt(trial):
+        max_depth         = trial.suggest_int('max_depth', 2, 20)
+        min_samples_split = trial.suggest_int('min_samples_split', 2, 50)
+
+        params = {
+            'max_depth':         max_depth,          # how deep the tree can grow
+            'min_samples_split': min_samples_split,  # minimum samples required to split a node
+        }
+        model = DecisionTreeClassifier(**params, class_weight='balanced', random_state=42)
+        return cross_val_score(model, X_train, y_train, cv=5, scoring='recall', n_jobs=-1).mean()
+
+    # --- Random Forest ---
+    def objective_rf(trial):
+        n_estimators = trial.suggest_int('n_estimators', 50, 300)
+        max_depth    = trial.suggest_int('max_depth', 3, 20)
+
+        params = {
+            'n_estimators': n_estimators,  # number of trees in the forest
+            'max_depth':    max_depth,     # depth of each individual tree
+        }
+        model = RandomForestClassifier(**params, class_weight='balanced', random_state=42)
+        return cross_val_score(model, X_train, y_train, cv=5, scoring='recall', n_jobs=-1).mean()
+
+    # --- XGBoost ---
+    def objective_xgb(trial):
+        learning_rate    = trial.suggest_float('learning_rate', 0.01, 0.3, log=True)
+        max_depth        = trial.suggest_int('max_depth', 3, 10)
+        scale_pos_weight = trial.suggest_int('scale_pos_weight', 1, 5)  # equivalent of class_weight: count(No)/count(Yes) ≈ 3
+
+        params = {
+            'learning_rate':    learning_rate,     # how fast the model learns (smaller = slower but more precise)
+            'max_depth':        max_depth,         # maximum depth of a tree, controls model complexity
+            'scale_pos_weight': scale_pos_weight,
+        }
+        model = XGBClassifier(**params, eval_metric='logloss', random_state=42)
+        return cross_val_score(model, X_train, y_train, cv=5, scoring='recall', n_jobs=-1).mean()
+
+    models_to_tune = {
+        "Logistic Regression": (objective_lr, True),
+        "Decision Tree":       (objective_dt, False),
+        "Random Forest":       (objective_rf, False),
+        "XGBoost":             (objective_xgb, False),
+    }
+
+    for name, (objective, use_scaling) in models_to_tune.items():
         print(f"Tuning model: {name}...")
 
-        # cv=5: evaluate each combination 5 times on different data splits (Cross-Validation)
-        # scoring='recall': our primary goal is catching as many churners as possible
-        # n_jobs=-1: use all available CPU cores to run combinations in parallel (faster)
-        grid_search = GridSearchCV(estimator=model, param_grid=grid, cv=5, scoring='recall', n_jobs=-1)
-        grid_search.fit(X_train_scaled, y_train)
+        X_te = X_test_scaled if use_scaling else X_test
 
-        # Get the best model with the winning hyperparameters
-        best_model = grid_search.best_estimator_
+        study = optuna.create_study(direction='maximize')
+        study.optimize(objective, n_trials=50)
 
-        # Test the winner on the hidden test data
-        y_pred = best_model.predict(X_test_scaled)
+        best_params = study.best_params
+        print(f"  Best Recall (CV): {study.best_value:.4f} | Params: {best_params}")
 
-        # Calculate metrics
-        acc = accuracy_score(y_test, y_pred)
-        recall = recall_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred)
-        f1 = f1_score(y_test, y_pred)
+        # Re-train best model on full training data and evaluate on test set
+        if name == "Logistic Regression":
+            X_tr = X_train_scaled
+            best_model = LogisticRegression(
+                **best_params, solver='saga', class_weight='balanced',
+                max_iter=1000, random_state=42
+            )
+        elif name == "Decision Tree":
+            X_tr = X_train
+            best_model = DecisionTreeClassifier(**best_params, class_weight='balanced', random_state=42)
+        elif name == "Random Forest":
+            X_tr = X_train
+            best_model = RandomForestClassifier(**best_params, class_weight='balanced', random_state=42)
+        else:  # XGBoost
+            X_tr = X_train
+            best_model = XGBClassifier(**best_params, eval_metric='logloss', random_state=42)
+
+        best_model.fit(X_tr, y_train)
+        y_pred = best_model.predict(X_te)
+
+        if name == "XGBoost":
+            best_xgb_model  = best_model  # save for returning — used by SHAP
+            best_xgb_y_pred = y_pred
 
         results.append({
             "Tuned Model": name,
-            "Accuracy": round(acc, 4),
-            "Recall": round(recall, 4),
-            "Precision": round(precision, 4),
-            "F1-Score": round(f1, 4),
-            "Best Params": str(grid_search.best_params_)  # Save the winning parameters
+            "Accuracy":    round(accuracy_score(y_test, y_pred), 4),
+            "Recall":      round(recall_score(y_test, y_pred), 4),
+            "Precision":   round(precision_score(y_test, y_pred), 4),
+            "F1-Score":    round(f1_score(y_test, y_pred), 4),
+            "Best Params": str(best_params),
         })
 
-    # Convert and display results
     results_df = pd.DataFrame(results).sort_values(by="Recall", ascending=False).reset_index(drop=True)
 
-    print("\n🏆 --- RESULTS AFTER HYPERPARAMETER TUNING (GRID SEARCH) --- 🏆")
+    print("\n🏆 --- RESULTS AFTER HYPERPARAMETER TUNING (OPTUNA) --- 🏆")
     pd.set_option('display.max_colwidth', None)
     print(results_df.to_string())
 
-    return results_df
+    utils.save_to_csv(results_df, "tuned_model_results.csv")
+    return best_xgb_model, best_xgb_y_pred
 
 def print_business_impact_simulation(y_test, y_pred_baseline, y_pred_tuned):
     """
