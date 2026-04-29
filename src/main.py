@@ -27,8 +27,8 @@ def main() -> None:
     """Main function - project entry point."""
     # 1. Download dataset
     df = data_loader.load_data()
-    # 2. EDA, Dataset initial analysis
-    data_analyzer.run_initial_analysis(df)# todo invoke generate_report directly
+    # 2. Generate HTML EDA report
+    data_analyzer.generate_report(df)
 
     # 3. EDA, Business visualization - Generate charts visualizing churn dependency on different features
     visualization.plot_business_insights(df)
