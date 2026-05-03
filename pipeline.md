@@ -31,11 +31,9 @@ At this stage we **don't yet know which columns are useful** — so we encode al
 | Fix `TotalCharges` | Convert to float, fill 11 NaN with 0 | `pd.to_numeric()`, `fillna(0)` |
 | Encode target | `Churn`: Yes→1, No→0 | `.map()` |
 | Drop `customerID` | Not useful for modeling | `drop()` |
-| Unify categories | `No internet service`→`No`, `No phone service`→`No` | `.replace()` |
 | Encode `gender` | Male→1, Female→0 | `.map()` |
-| Encode binary cols | Yes→1, No→0 for 11 service columns | `.map()` |
-| Encode `Contract` | Ordinal: Month-to-month=0, One year=1, Two year=2 | `.map()` |
-| One-hot encode | `InternetService`, `PaymentMethod` | `pd.get_dummies(drop_first=True)` |
+| Encode binary cols | Yes→1, No→0 for `Partner`, `Dependents`, `PhoneService`, `PaperlessBilling` | `.map()` |
+| One-hot encode | `PaymentMethod`, `InternetService`, `OnlineSecurity`, `OnlineBackup`, `DeviceProtection`, `TechSupport`, `StreamingTV`, `StreamingMovies`, `Contract`, `MultipleLines` | `pd.get_dummies(drop_first=True)` |
 
 ## Step 5 — Feature Relationships
 All columns are now numeric — correlations work on the full dataset:
@@ -43,22 +41,18 @@ All columns are now numeric — correlations work on the full dataset:
 - Mutual Information scores (`mutual_info_classif`) saved to `charts/mutual_information.png`
 - MI is the primary signal — captures non-linear dependencies, works better than correlation for binary targets
 
-## Step 6 — Feature Selection
-*Based on what we saw in Step 5* — columns with near-zero MI scores are dropped:
-`StreamingTV`, `PhoneService`, `MultipleLines`, `StreamingMovies`, `DeviceProtection`, `Partner`, `gender`
-
-## Step 7 — Train-Test Split
+## Step 6 — Train-Test Split
 - 80/20 split, `stratify=y` — preserves the 27%/73% churn ratio in both sets
-- Split happens **after** feature selection — test set is never seen during training
+- Test set is never seen during training
 
-## Step 8 — Scaling (Logistic Regression only)
+## Step 7 — Scaling (Logistic Regression only)
 - `StandardScaler` fitted **once** on `X_train`, applied to both sets
 - Applied **only to Logistic Regression** — gradient-based, sensitive to feature scale
 - Tree-based models (Decision Tree, Random Forest, XGBoost) receive **raw unscaled data** — splits on thresholds, scale is irrelevant
 
-## Step 9 — Baseline Model Training
+## Step 8 — Baseline Model Training
 4 models trained and compared, sorted by Recall:
-- Logistic Regression uses **Lasso (L1) regularization** (`l1_ratio=1.0, solver='saga'`) — weak features get coefficient = 0
+- Logistic Regression uses **ElasticNet regularization** (`l1_ratio=1.0, solver='saga'`) — with `l1_ratio=1.0` it acts as pure Lasso (L1), zeroing out weak feature weights
 - Tree-based models (Decision Tree, Random Forest, XGBoost) receive raw unscaled data
 
 | Model | Accuracy | Recall | Precision | F1-Score |
@@ -70,7 +64,7 @@ All columns are now numeric — correlations work on the full dataset:
 
 **Logistic Regression wins baseline** — simplest model outperforms all ensemble methods.
 
-## Step 10 — Confusion Matrix (Logistic Regression)
+## Step 9 — Confusion Matrix (Logistic Regression)
 
 |  | Predicted: Stays | Predicted: Churns |
 |---|---|---|
@@ -79,7 +73,7 @@ All columns are now numeric — correlations work on the full dataset:
 
 **167 missed churners (FN)** — the most costly mistake.
 
-## Step 11 — Hyperparameter Tuning
+## Step 10 — Hyperparameter Tuning
 - **Optuna** (`n_trials=50`, `scoring='recall'`, TPE Bayesian sampler) replaces GridSearchCV
 - Optuna learns from previous trials which parameter regions are promising — faster and searches continuous ranges
 - `class_weight='balanced'` for sklearn models, `scale_pos_weight≈3` for XGBoost — address 27%/73% class imbalance
@@ -96,7 +90,7 @@ All columns are now numeric — correlations work on the full dataset:
 
 **XGBoost wins on Recall (0.93)** — trade-off: lower Precision (0.41), more false alarms.
 
-## Step 12 — Confusion Matrix (Tuned XGBoost)
+## Step 11 — Confusion Matrix (Tuned XGBoost)
 
 |  | Predicted: Stays | Predicted: Churns |
 |---|---|---|
@@ -105,7 +99,7 @@ All columns are now numeric — correlations work on the full dataset:
 
 **FN dropped from 167 → 26** — XGBoost misses almost no real churners.
 
-## Step 13 — Business Impact Simulation
+## Step 12 — Business Impact Simulation
 
 ```
 Net profit = TP × (LTV - discount) - FP × discount - FN × LTV
@@ -121,7 +115,7 @@ Net profit = TP × (LTV - discount) - FP × discount - FN × LTV
 
 **Tuned XGBoost brings $229,000 more profit** on this test sample. Key driver: FN 167 → 26, each missed churner costs $1,000.
 
-## Step 14 — SHAP Feature Importance
+## Step 13 — SHAP Feature Importance
 
 Using the tuned XGBoost model to explain **which features drive predictions** and why:
 

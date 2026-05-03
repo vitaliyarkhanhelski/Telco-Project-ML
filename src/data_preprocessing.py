@@ -6,11 +6,10 @@ from src.settings import settings
 
 
 def clean_and_encode_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Run full cleaning and encoding pipeline: TotalCharges, target, drop customerID, unify, encode, one-hot."""
+    """Run full cleaning and encoding pipeline: TotalCharges, target, drop customerID, encode, one-hot."""
     df = preprocess_TotalCharges_column(df)
     df = encode_target_column(df)
     df = drop_column(df, "customerID")
-    df = unify_redundant_categories(df)
     df = encode_features(df)
     df = apply_one_hot_encoding(df)
     return df
@@ -26,19 +25,6 @@ def drop_column(df: pd.DataFrame, column: str) -> pd.DataFrame:
     return drop_columns(df, [column])
 
 
-def drop_useless_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Drop columns rated as useless by Mutual Information. Uses drop_columns internally."""
-    cols_to_drop = settings.get("useless_cols_to_drop", [])
-    return drop_columns(df, cols_to_drop)
-
-
-def unify_redundant_categories(df: pd.DataFrame) -> pd.DataFrame:
-    """Unify redundant service categories: 'No internet service' -> 'No', 'No phone service' -> 'No'."""
-    cols_to_unify = settings.get("cols_to_unify", [])
-    for col in cols_to_unify:
-        df[col] = df[col].replace("No internet service", "No")
-    df["MultipleLines"] = df["MultipleLines"].replace("No phone service", "No")
-    return df
 
 
 def preprocess_TotalCharges_column(df: pd.DataFrame) -> pd.DataFrame:
@@ -73,11 +59,10 @@ def encode_binary_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def encode_contract_column(df: pd.DataFrame) -> pd.DataFrame:
-    """Ordinal encoding for Contract: Month-to-month -> 0, One year -> 1, Two year -> 2."""
-    df["Contract"] = df["Contract"].map(
-        {"Month-to-month": 0, "One year": 1, "Two year": 2}
-    )
+def encode_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Encode categorical columns: gender and binary cols."""
+    df = encode_gender_column(df)
+    df = encode_binary_columns(df)
     return df
 
 
@@ -86,10 +71,3 @@ def apply_one_hot_encoding(df: pd.DataFrame) -> pd.DataFrame:
     cols = settings.get("one_hot_encoding_cols", [])
     return pd.get_dummies(df, columns=cols, drop_first=True, dtype=int)
 
-
-def encode_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Encode categorical columns: gender, binary cols, contract."""
-    df = encode_gender_column(df)
-    df = encode_binary_columns(df)
-    df = encode_contract_column(df)
-    return df

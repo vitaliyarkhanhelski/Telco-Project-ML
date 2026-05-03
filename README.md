@@ -146,31 +146,30 @@ python -m src.main
 1. **Data loading** – Download from Kaggle, load into DataFrame
 2. **Initial analysis** – Generate report, dataset overview
 3. **Business insights (EDA)** – 5 charts showing root causes of churn, saved to `charts/eda/`
-4. **Preprocessing** – TotalCharges fix, target encoding, drop customerID, unify categories, encode features, one-hot encoding
+4. **Preprocessing** – TotalCharges fix, target encoding, drop customerID, encode gender & binary cols, one-hot encoding for 10 categorical columns
 5. **Feature analysis** – Pearson/Spearman/Kendall correlation heatmaps saved to `charts/correlation/`, Mutual Information saved to `charts/`:
 
    <a href="charts/correlation/churn_correlation_pearson.png"><img src="charts/correlation/churn_correlation_pearson.png" width="380" alt="Pearson"></a>
    <a href="charts/correlation/churn_correlation_spearman.png"><img src="charts/correlation/churn_correlation_spearman.png" width="380" alt="Spearman"></a>
    <a href="charts/correlation/churn_correlation_kendall.png"><img src="charts/correlation/churn_correlation_kendall.png" width="380" alt="Kendall"></a>
    <a href="charts/mutual_information.png"><img src="charts/mutual_information.png" width="380" alt="Mutual Information"></a>
-6. **Feature selection** – Drop useless columns based on Mutual Information scores
-7. **Train-test split** – 80/20 split with stratification
-8. **Model training** – Train and compare 4 models (Logistic Regression with Lasso/L1, Decision Tree, Random Forest, XGBoost), results saved to `data/initial_model_results.csv`
-9. **Confusion matrix (Logistic Regression)** – Plot TN/FP/FN/TP for the initial winner:
+6. **Train-test split** – 80/20 split with stratification
+7. **Model training** – Train and compare 4 models (Logistic Regression with Lasso/L1, Decision Tree, Random Forest, XGBoost), results saved to `data/initial_model_results.csv`
+8. **Confusion matrix (Logistic Regression)** – Plot TN/FP/FN/TP for the initial winner:
 
    <p align="center">
    <a href="charts/confusion_matrix_initial_logistic_regression.png"><img src="charts/confusion_matrix_initial_logistic_regression.png" width="500" alt="Logistic Regression Confusion Matrix"></a>
    </p>
 
-10. **Hyperparameter tuning** – Optuna (50 trials, TPE Bayesian sampler) optimizing for Recall, results saved to `data/tuned_model_results.csv`
-11. **Confusion matrix (Tuned XGBoost)** – Plot TN/FP/FN/TP for the tuned winner:
+9. **Hyperparameter tuning** – Optuna (50 trials, TPE Bayesian sampler) optimizing for Recall, results saved to `data/tuned_model_results.csv`
+10. **Confusion matrix (Tuned XGBoost)** – Plot TN/FP/FN/TP for the tuned winner:
 
     <p align="center">
     <a href="charts/confusion_matrix_tuned_xgboost.png"><img src="charts/confusion_matrix_tuned_xgboost.png" width="500" alt="Tuned XGBoost Confusion Matrix"></a>
     </p>
 
-12. **Business impact simulation** – Compare financial ROI of baseline vs tuned model
-13. **SHAP Feature Importance** – Explain which features drive XGBoost predictions, saved to `charts/shap/`:
+11. **Business impact simulation** – Compare financial ROI of baseline vs tuned model
+12. **SHAP Feature Importance** – Explain which features drive XGBoost predictions, saved to `charts/shap/`:
 
     <a href="charts/shap/shap_summary.png"><img src="charts/shap/shap_summary.png" width="380" alt="SHAP Summary"></a>
     <a href="charts/shap/shap_dependence_top1.png"><img src="charts/shap/shap_dependence_top1.png" width="380" alt="SHAP Dependence Top 1"></a>

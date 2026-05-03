@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 
 import src.visualization as visualization
 import src.utils as utils
@@ -12,10 +12,10 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import cross_val_score
 from sklearn.metrics import confusion_matrix
 import optuna
 optuna.logging.set_verbosity(optuna.logging.WARNING)  # suppress per-trial logs, show only final result
+
 
 def split_data(df):
     """Split data into training and test sets (ONLY ONCE!)."""
@@ -195,7 +195,7 @@ def tune_hyperparameters(X_train, X_test, y_train, y_test):
         study.optimize(objective, n_trials=50)
 
         best_params = study.best_params
-        print(f"  Best Recall (CV): {study.best_value:.4f} | Params: {best_params}")
+        print(f"  Best Recall (CV avg): {study.best_value:.4f} | Params: {best_params}")
 
         # Re-train best model on full training data and evaluate on test set
         if name == "Logistic Regression":
@@ -215,11 +215,13 @@ def tune_hyperparameters(X_train, X_test, y_train, y_test):
             best_model = XGBClassifier(**best_params, eval_metric='logloss', random_state=42)
 
         best_model.fit(X_tr, y_train)
+
         y_pred = best_model.predict(X_te)
 
         if name == "XGBoost":
             best_xgb_model  = best_model  # save for returning — used by SHAP
             best_xgb_y_pred = y_pred
+
 
         results.append({
             "Tuned Model": name,

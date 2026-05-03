@@ -34,23 +34,19 @@ This is a **binary classification problem**: given a set of customer features, p
 - correct `TotalCharges` column type to float, and check for null values after conversion, after conversion we have 11 null values, but they occur only for customers with `tenure` equal to 0, so we can safely fill these null values with 0
 - encode target variable `Churn` to binary (Yes = 1, No = 0)
 - drop `customerID` column as it is not useful for modeling
-- unify redundant categories ('No internet service' = 'No', 'No phone service' = 'No')
-- encode categorical columns: `gender` (Male=1, Female=0) and binary columns ('Yes'=1/'No'=0) using label encoding, `Contract` column using ordinal encoding (Month-to-month=0, One year=1, Two year=2) since there is a natural order
-- apply one-hot encoding to `InternetService` and `PaymentMethod` columns since they are nominal categorical variables without a natural order, using `pd.get_dummies` function with `drop_first=True` to avoid multicollinearity
+- encode categorical columns: `gender` (Male=1, Female=0) and binary columns ('Yes'=1/'No'=0 for `Partner`, `Dependents`, `PhoneService`, `PaperlessBilling`) using label encoding
+- apply one-hot encoding to `PaymentMethod`, `InternetService`, `OnlineSecurity`, `OnlineBackup`, `DeviceProtection`, `TechSupport`, `StreamingTV`, `StreamingMovies`, `Contract`, and `MultipleLines` columns since they are nominal (or multi-class) categorical variables, using `pd.get_dummies` function with `drop_first=True` to avoid multicollinearity
 
 ### 5. Visualize correlation between features and target variable:
 - generate correlation heatmaps(Pearson, Spearman, Kendall) using seaborn to visualize the correlation between features and the target variable `Churn`
 - additionally we generate a Mutual Information chart, which captures non-linear dependencies between features and the target variable and works well for classification problems — it measures how much information about `y` (Churn) is contained in each feature `X`, showing which features are most predictive of churn
 
-### 6. Drop useless features:
-- analyze the heatmaps and mutual information chart to identify which features does not have any significant correlation with the target variable `Churn` and drop them, in this case we can drop `StreamingTV`, `PhoneService`, `MultipleLines`, `StreamingMovies`, `DeviceProtection`, `Partner`, and `gender` columns as they have very low correlation with churn and do not provide much predictive power for our model. These features are only providing noise
-
-### 7. Train-test split:
+### 6. Train-test split:
 - split the dataset into training and testing sets
 
-### 8. Train and compare models:
+### 7. Train and compare models:
 - scale features using `StandardScaler` (mean=0, std=1) **only for Logistic Regression** — tree-based models (Decision Tree, Random Forest, XGBoost) are scale-invariant and receive raw data
-- Logistic Regression uses **Lasso (L1) regularization** (`penalty='l1', solver='liblinear'`) — adds a penalty for large weights, automatically zeroing out unimportant features
+- Logistic Regression uses **ElasticNet regularization** (`l1_ratio=1.0, solver='saga'`) — with `l1_ratio=1.0` it behaves as pure Lasso (L1), adding a penalty for large weights and automatically zeroing out unimportant features
 - train 4 models: `Logistic Regression`, `Decision Tree`, `Random Forest`, `XGBoost` — all 4 are suitable for **binary classification** (predicting Yes/No). Linear Regression is not used here because it predicts continuous values (e.g. 0.73) rather than discrete classes, and has no natural decision boundary for Yes/No output. These 4 models were chosen to cover a range of complexity: from simple (`Logistic Regression`, `Decision Tree`) to ensemble methods (`Random Forest`, `XGBoost`) which are generally more powerful
 - evaluate each model using 4 metrics:
   - `Accuracy` — out of all customers, how many did we predict correctly?
@@ -62,19 +58,19 @@ This is a **binary classification problem**: given a set of customer features, p
 
 **Logistic Regression won across all 4 metrics** — best Recall (0.55), best Accuracy (0.80), best Precision (0.65), and best F1-Score (0.60). Surprisingly the simplest model outperformed all ensemble methods.
 
-### 9. Confusion Matrix for Logistic Regression:
+### 8. Confusion Matrix for Logistic Regression:
 - re-train Logistic Regression once again and visualize its predictions as a **Confusion Matrix** — a 2x2 table showing exactly where the model is right and where it makes mistakes:
 
 |  | Predicted: Stays (0) | Predicted: Churns (1) |
 |---|---|---|
-| **Actual: Stays (0)** | TN = 926 ✅ correctly predicted stays | FP = 109 ❌ false alarms (predicted churn, actually stayed) |
-| **Actual: Churns (1)** | FN = 164 ❌ missed churners (predicted stay, actually churned) | TP = 210 ✅ correctly predicted churns |
+| **Actual: Stays (0)** | TN = 925 ✅ correctly predicted stays | FP = 110 ❌ false alarms (predicted churn, actually stayed) |
+| **Actual: Churns (1)** | FN = 167 ❌ missed churners (predicted stay, actually churned) | TP = 207 ✅ correctly predicted churns |
 
-- **FN (164 missed churners)** is the most costly business mistake — these are real customers who left but we never tried to retain them
+- **FN (167 missed churners)** is the most costly business mistake — these are real customers who left but we never tried to retain them
 
-### 10. Tune hyperparameters for all the models:
+### 9. Tune hyperparameters for all the models:
 - use **Optuna** with `n_trials=50` and `scoring='recall'` (TPE Bayesian sampler) to find the best hyperparameters for each model — Optuna learns from previous trials which parameter regions are promising, making it faster and more flexible than GridSearchCV (can search continuous ranges instead of fixed lists)
-- Logistic Regression tunes both `C` (regularization strength) and `penalty` (l1 vs l2) — Optuna picks the best combination automatically
+- Logistic Regression tunes both `C` (regularization strength) and `l1_ratio` (0.0=L2/Ridge vs 1.0=L1/Lasso) — Optuna picks the best combination automatically
 - save results to `data/tuned_model_results.csv` and analyze:
 
 **XGBoost wins on Recall (0.93)** — catches 93 out of every 100 real churners. However this comes with a trade-off:
@@ -87,25 +83,25 @@ This is a **binary classification problem**: given a set of customer features, p
 
 In telecom, a missed churner is typically far more expensive than a false alarm — therefore **high Recall = business priority**, and XGBoost is the winner.
 
-### 11. Confusion Matrix for Tuned XGBoost:
+### 10. Confusion Matrix for Tuned XGBoost:
 - re-train XGBoost with best params from `tuned_model_results.csv` and visualize its confusion matrix:
 
 |  | Predicted: Stays (0) | Predicted: Churns (1) |
 |---|---|---|
-| **Actual: Stays (0)** | TN = 533 ✅ correctly predicted stays | FP = 502 ❌ false alarms (predicted churn, actually stayed) |
-| **Actual: Churns (1)** | FN = 23 ✅ missed churners (predicted stay, actually churned) | TP = 351 ✅ correctly predicted churns |
+| **Actual: Stays (0)** | TN = 536 ✅ correctly predicted stays | FP = 499 ❌ false alarms (predicted churn, actually stayed) |
+| **Actual: Churns (1)** | FN = 26 ✅ missed churners (predicted stay, actually churned) | TP = 348 ✅ correctly predicted churns |
 
 Comparison with initial Logistic Regression:
 
 | | Logistic Regression | Tuned XGBoost |
 |---|---|---|
-| **FN (missed churners)** | 164 ❌ | **23 ✅** |
-| **FP (false alarms)** | 109 | 502 |
-| **TP (caught churners)** | 210 | **351** |
+| **FN (missed churners)** | 167 ❌ | **26 ✅** |
+| **FP (false alarms)** | 110 | 499 |
+| **TP (caught churners)** | 207 | **348** |
 
-**FN dropped from 164 → 23** — XGBoost misses almost no real churners. The cost is more false alarms (502 vs 109) — we send discounts to more customers who would have stayed anyway, but we retain far more real churners. In most business scenarios this trade-off is well worth it.
+**FN dropped from 167 → 26** — XGBoost misses almost no real churners. The cost is more false alarms (499 vs 110) — we send discounts to more customers who would have stayed anyway, but we retain far more real churners. In most business scenarios this trade-off is well worth it.
 
-### 12. Business Impact Simulation:
+### 11. Business Impact Simulation:
 - simulate the financial impact of using the tuned XGBoost model vs the baseline Logistic Regression, based on two assumptions:
   - **Customer LTV = 1000** — revenue lost if a churner is missed
   - **Discount cost = 100** — cost of sending a retention offer
@@ -117,14 +113,14 @@ Net profit = TP × (LTV - discount) - FP × discount - FN × LTV
 
 | | Logistic Regression | Tuned XGBoost |
 |---|---|---|
-| Retained customers (TP) | 210 → profit $189,000 | 351 → profit $315,900 |
-| False alarms (FP) | 109 → loss $10,900 | 502 → loss $50,200 |
-| Missed churners (FN) | 164 → loss $164,000 | 23 → loss $23,000 |
-| **Net profit** | **$14,100** | **$242,700** |
+| Retained customers (TP) | 207 → profit $186,300 | 348 → profit $313,200 |
+| False alarms (FP) | 110 → loss $11,000 | 499 → loss $49,900 |
+| Missed churners (FN) | 167 → loss $167,000 | 26 → loss $26,000 |
+| **Net profit** | **$8,300** | **$237,300** |
 
-**Tuned XGBoost brings $228,600 more profit** on this test sample (+67.1% more retained customers). The key driver is **FN dropping from 164 → 23** — each missed churner costs full LTV=$1000, so catching 141 more churners alone saves $141,000.
+**Tuned XGBoost brings $229,000 more profit** on this test sample. The key driver is **FN dropping from 167 → 26** — each missed churner costs full LTV=$1000, so catching 141 more churners alone saves $141,000.
 
-### 13. SHAP Feature Importance:
+### 12. SHAP Feature Importance:
 - use **SHAP (Shapley values)** to explain which features drive the tuned XGBoost predictions — both globally (across all customers) and locally (for a single churner)
 - **Summary Plot** — global beeswarm chart showing the most impactful features across the entire test set
 - **Dependence Plots** — for the 2 most important features (selected dynamically): shows how each feature's value affects churn probability

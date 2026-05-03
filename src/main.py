@@ -27,6 +27,7 @@ def main() -> None:
     """Main function - project entry point."""
     # 1. Download dataset
     df = data_loader.load_data()
+
     # 2. Generate HTML EDA report
     data_analyzer.generate_report(df)
 
@@ -38,29 +39,26 @@ def main() -> None:
     # 5. Visualize correlation between features and target variable
     visualization.visualize_feature_relationships(df)
 
-    # 6. Feature Selection — drop useless columns identified from Mutual Information chart
-    df = data_preprocessing.drop_useless_columns(df)
-
     # Model Training & Evaluation
-    # 7. Train-test split
+    # 6. Train-test split
     X_train, X_test, y_train, y_test = model_trainer.split_data(df)
 
-    # 8. Train and compare models — returns y_pred for Logistic Regression (baseline winner)
+    # 7. Train and compare models — returns y_pred for Logistic Regression (baseline winner)
     y_pred_log_reg = model_trainer.train_and_compare_models(X_train, X_test, y_train, y_test)
 
-    # 9. Confusion Matrix for Logistic Regression (winner)
+    # 8. Confusion Matrix for Logistic Regression (winner)
     model_trainer.plot_logistic_regression_confusion_matrix(y_test, y_pred_log_reg)
 
-    # 10. Tune hyperparameters for all models — returns tuned XGBoost model and its predictions
+    # 9. Tune hyperparameters for all models — returns tuned XGBoost model and its predictions
     xgb_tuned_model, y_pred_xgb_tuned = model_trainer.tune_hyperparameters(X_train, X_test, y_train, y_test)
 
-    # 11. Confusion Matrix for tuned XGBoost (winner after tuning)
+    # 10. Confusion Matrix for tuned XGBoost (winner after tuning)
     model_trainer.plot_tuned_xgboost_confusion_matrix(y_test, y_pred_xgb_tuned)
 
-    # 12. Business impact simulation comparing Logistic Regression and tuned XGBoost
+    # 11. Business impact simulation comparing Logistic Regression and tuned XGBoost
     model_trainer.print_business_impact_simulation(y_test, y_pred_log_reg, y_pred_xgb_tuned)
 
-    # 13. SHAP Feature Importance — which features drive XGBoost predictions
+    # 12. SHAP Feature Importance — which features drive XGBoost predictions
     visualization.plot_shap_importance(xgb_tuned_model, X_test, y_test)
 
 
