@@ -81,12 +81,12 @@ All columns are now numeric — correlations work on the full dataset:
 - Results saved to `data/tuned_model_results.csv`
 - Best XGBoost model object returned directly — no need to re-load from CSV
 
-| Model | Accuracy | Recall | Precision | F1-Score |
-|---|---|---|---|---|
-| **XGBoost** | 0.5891 | **0.9626** | 0.3892 | 0.5543 |
-| Decision Tree | 0.6529 | 0.8797 | 0.4256 | 0.5737 |
-| Random Forest | 0.7062 | 0.8369 | 0.4700 | 0.6019 |
-| Logistic Regression | 0.7374 | 0.7888 | 0.5034 | 0.6146 |
+| Model | Accuracy | Recall | Precision | F1-Score | Best Params |
+|---|---|---|---|---|---|
+| **XGBoost** | 0.5891 | **0.9626** | 0.3892 | 0.5543 | learning_rate=0.012, max_depth=4, scale_pos_weight=5 |
+| Decision Tree | 0.6529 | 0.8797 | 0.4256 | 0.5737 | max_depth=2, min_samples_split=8 |
+| Random Forest | 0.7062 | 0.8369 | 0.4700 | 0.6019 | n_estimators=78, max_depth=3 |
+| Logistic Regression | 0.7374 | 0.7888 | 0.5034 | 0.6146 | C=0.604, l1_ratio=1.0 |
 
 **XGBoost wins on Recall (0.96)** — trade-off: lower Precision (0.39), more false alarms.
 

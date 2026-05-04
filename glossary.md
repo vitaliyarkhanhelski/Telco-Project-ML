@@ -27,14 +27,42 @@ This document contains simple, easy-to-understand definitions of the key concept
 
 ## 5. Regularization
 * **Regularization:** A technique that penalizes overly complex models to prevent overfitting — the model is forced to keep its weights small and focus only on the most important features.
-* **Lasso (L1 Regularization):** A type of regularization that adds a penalty equal to the **absolute value** of each weight. The key property: weak, unimportant features get their weight pushed all the way to **zero** — they are effectively removed from the model automatically. Controlled by parameter `C` (inverse of penalty strength): small `C` = strong penalty = more features zeroed out. Used in our Logistic Regression with `penalty='l1', solver='liblinear'`.
-* **Ridge (L2 Regularization):** Similar to Lasso, but the penalty is based on the **square** of each weight. Instead of zeroing features out, it just shrinks all weights proportionally. Features are never fully removed — just reduced. Used as an alternative to L1 in hyperparameter tuning.
+* **Lasso (L1 Regularization):** A type of regularization that adds a penalty equal to the **absolute value** of each weight (`λ × Σ|wᵢ|`). The optimizer finds it cheaper to push unimportant weights all the way to exactly **zero** than to keep paying a penalty for them — effectively removing those features from the model automatically. Controlled by parameter `C` (inverse of penalty strength): small `C` = strong penalty = more features zeroed out.
+* **Ridge (L2 Regularization):** Similar to Lasso, but the penalty is based on the **square** of each weight (`λ × Σwᵢ²`). Instead of zeroing features out, it just shrinks all weights proportionally. Features are never fully removed — just reduced.
+* **ElasticNet:** A mix of L1 and L2 regularization, controlled by `l1_ratio` (0.0 = pure Ridge, 1.0 = pure Lasso, 0.5 = 50/50 mix). In our Logistic Regression we use `l1_ratio=1.0` — pure Lasso behavior via the ElasticNet interface. Requires `solver='saga'` — the only sklearn solver that supports ElasticNet.
+* **`l1_ratio`:** Parameter in ElasticNet controlling the mix between L1 and L2. Valid range: 0.0 to 1.0. Value of `1.0` means pure Lasso (zeros out weak features); `0.0` means pure Ridge (shrinks all weights). During hyperparameter tuning, Optuna chooses between `[0.0, 1.0]` to find the better regularization type automatically.
+* **`solver='saga'`:** The optimization algorithm used internally by Logistic Regression to find the best weights. `saga` (Stochastic Average Gradient Augmented) is the only sklearn solver that supports `l1_ratio` / ElasticNet — required whenever `l1_ratio` is used.
 
 ## 6. Hyperparameter Tuning
 * **Hyperparameters:** Settings that control how a model learns — they are set before training and are not learned from data (e.g. `max_depth` for Decision Tree, `learning_rate` for XGBoost).
+* **Overfitting:** When a model memorizes the training data too well — including random noise — and then performs poorly on new, unseen data. Like a student who memorizes answers instead of understanding the subject.
 * **Cross-Validation (CV):** A technique for evaluating model quality without touching the test set. The training data is split into `k` equal parts (folds). The model is trained `k` times — each time on `k-1` folds and tested on the remaining 1. The final score is the average across all folds. We use `cv=5` — 5 rounds, each using a different 20% as validation.
 * **GridSearchCV:** Exhaustive search — tries every possible combination of hyperparameters from a predefined list. Slow for large grids but guaranteed to find the best combination within the list.
 * **Optuna:** Intelligent hyperparameter tuning library using **Bayesian optimization (TPE sampler)**. Instead of trying all combinations, it learns from previous trials which parameter regions are promising and focuses search there. Faster than GridSearch and can search continuous ranges (e.g. `C` from 0.01 to 10.0 instead of a fixed list).
+* **TPE (Tree-structured Parzen Estimator):** The default Bayesian sampler used by Optuna. After an initial random exploration phase (~10 trials), TPE builds two probability models — one for "good" results and one for "bad" — and uses them to select the next parameters most likely to improve the score. This is why it finds good results much faster than random or grid search.
+* **`n_trials`:** The number of Optuna trials (attempts) per model. Each trial = one set of hyperparameters → train model → evaluate Recall via cross-validation. We use `n_trials=50` per model (200 total across 4 models). Sufficient for 2–3 hyperparameters; more complex search spaces would require 200–500.
+
+### Hyperparameters used in this project
+
+* **`C` (Logistic Regression):** Controls how much the model is allowed to "memorize" training data. Think of it as how strict the teacher is:
+  * **Low C (e.g. 0.01)** = strict teacher = model must be simple, ignores details, less risk of overfitting
+  * **High C (e.g. 10.0)** = lenient teacher = model can be more complex, may overfit
+  * Our best value: **C=0.604** — slightly strict, simple model but not oversimplified
+  * Note: C is the *inverse* of penalty strength — `penalty = 1/C`
+
+* **`max_depth` (Decision Tree / Random Forest / XGBoost):** How many levels of questions the tree can ask before making a decision. A shallow tree (e.g. depth=2) asks only 2 questions — simple, less likely to overfit. A deep tree asks many questions — can memorize training data.
+  * Our best: Decision Tree `max_depth=2`, Random Forest `max_depth=3`, XGBoost `max_depth=4`
+
+* **`min_samples_split` (Decision Tree):** Minimum number of customers required before the tree is allowed to split a node into two branches. High value = fewer, broader splits = simpler model.
+  * Our best: **min_samples_split=8** — a node needs at least 8 customers to be split further
+
+* **`n_estimators` (Random Forest):** How many decision trees are in the forest. More trees = more stable "majority vote" = better results, but slower training.
+  * Our best: **n_estimators=78**
+
+* **`learning_rate` (XGBoost):** How big of a step the model takes when learning from each mistake. Small learning rate = slow but precise learning. Large learning rate = fast but may overshoot the optimal solution.
+  * Our best: **learning_rate=0.012** — very slow and careful learning
+
+* **`scale_pos_weight` (XGBoost):** Tells XGBoost how much more important churners are compared to non-churners. Value = count(non-churners) / count(churners) ≈ 2.77. We let Optuna tune it in range 1–5, best found: **5** (slightly above natural ratio, pushing model harder toward catching churners).
 
 ## 7. Model Explainability
 * **SHAP (SHapley Additive exPlanations):** A method that explains individual model predictions by calculating how much each feature contributed to pushing the prediction above or below the average. Based on **Shapley values** from game theory.
