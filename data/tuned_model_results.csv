@@ -1,5 +1,5 @@
 Tuned Model,Accuracy,Recall,Precision,F1-Score,Best Params
-XGBoost,0.5891,0.9626,0.3892,0.5543,"{'learning_rate': 0.012199289072684263, 'max_depth': 4, 'scale_pos_weight': 5}"
-Decision Tree,0.6529,0.8797,0.4256,0.5737,"{'max_depth': 3, 'min_samples_split': 49}"
-Random Forest,0.7033,0.8342,0.4671,0.5988,"{'n_estimators': 103, 'max_depth': 3}"
-Logistic Regression,0.7395,0.7834,0.506,0.6149,"{'C': 1.6607331164760974, 'l1_ratio': 0.0}"
+XGBoost,0.5891,0.9626,0.3892,0.5543,"{'learning_rate': 0.012235624790462444, 'max_depth': 4, 'scale_pos_weight': 5}"
+Decision Tree,0.6529,0.8797,0.4256,0.5737,"{'max_depth': 2, 'min_samples_split': 8}"
+Random Forest,0.7062,0.8369,0.47,0.6019,"{'n_estimators': 78, 'max_depth': 3}"
+Logistic Regression,0.7374,0.7888,0.5034,0.6146,"{'C': 0.6042357652330237, 'l1_ratio': 1.0}"

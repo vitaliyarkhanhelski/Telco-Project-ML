@@ -243,9 +243,16 @@ def tune_hyperparameters(X_train, X_test, y_train, y_test):
 
 def print_business_impact_simulation(y_test, y_pred_baseline, y_pred_tuned):
     """
-    Computes and displays a financial simulation based on the Confusion Matrix.
-    LTV = 1000 (Customer Lifetime Value)
-    Discount cost = 100
+    Computes and displays a financial simulation comparing three retention strategies:
+
+    0. Business baseline — give discount to everyone (no ML)
+       The simplest real-world alternative: flag every customer as at-risk.
+       Catches all churners (FN=0) but wastes budget on non-churners.
+    1. Logistic Regression — first ML model (no hyperparameter tuning)
+    2. Tuned XGBoost — optimized model (Optuna, maximizing Recall)
+
+    LTV = 1000 (Customer Lifetime Value — full revenue lost if a churner is missed)
+    Discount cost = 100 (cost of sending a retention offer)
     """
 
     cm_base = confusion_matrix(y_test, y_pred_baseline)
@@ -255,37 +262,47 @@ def print_business_impact_simulation(y_test, y_pred_baseline, y_pred_tuned):
     tn_b, fp_b, fn_b, tp_b = cm_base.ravel()
     tn_t, fp_t, fn_t, tp_t = cm_tuned.ravel()
 
+    # Strategy 0: give discount to everyone — no ML needed
+    # Every churner is caught (TP = all actual churners), every non-churner gets an unnecessary discount (FP = all non-churners)
+    tp_all = int(y_test.sum())
+    fp_all = int((y_test == 0).sum())
+    fn_all = 0
+
     LTV = 1000
     DISCOUNT_COST = 100
     PROFIT_FROM_RETENTION = LTV - DISCOUNT_COST  # we saved the customer but gave a discount
     COST_OF_FALSE_POSITIVE = DISCOUNT_COST        # unnecessary discount to someone who would stay
     COST_OF_MISSED_CHURNER = LTV                  # customer left, full LTV lost
 
-    profit_base = (tp_b * PROFIT_FROM_RETENTION) - (fp_b * COST_OF_FALSE_POSITIVE) - (fn_b * COST_OF_MISSED_CHURNER)
+    profit_all   = (tp_all * PROFIT_FROM_RETENTION) - (fp_all * COST_OF_FALSE_POSITIVE) - (fn_all * COST_OF_MISSED_CHURNER)
+    profit_base  = (tp_b * PROFIT_FROM_RETENTION) - (fp_b * COST_OF_FALSE_POSITIVE) - (fn_b * COST_OF_MISSED_CHURNER)
     profit_tuned = (tp_t * PROFIT_FROM_RETENTION) - (fp_t * COST_OF_FALSE_POSITIVE) - (fn_t * COST_OF_MISSED_CHURNER)
 
-    profit_difference = profit_tuned - profit_base
-    tp_increase_percent = ((tp_t - tp_b) / tp_b) * 100 if tp_b > 0 else 0 # Calculate % improvement
-
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
     print("Business simulation (model ROI)")
-    print("=" * 50)
+    print("=" * 60)
     print(f"Customer LTV: {LTV} | Campaign cost (discount): {DISCOUNT_COST}\n")
 
-    print("1. Baseline model (Logistic Regression):")
-    print(f"   - Retained customers (TP): {tp_b} -> Profit: {tp_b * PROFIT_FROM_RETENTION}")
-    print(f"   - False alarms (FP):       {fp_b} -> Loss: {fp_b * COST_OF_FALSE_POSITIVE}")
-    print(f"   - Missed churners (FN):    {fn_b} -> Loss: {fn_b * COST_OF_MISSED_CHURNER}")
-    print(f"   - Net profit: {profit_base}\n")
+    print("0. Business baseline — give discount to everyone (no ML):")
+    print(f"   - Retained customers (TP): {tp_all} -> Profit: ${tp_all * PROFIT_FROM_RETENTION:,}")
+    print(f"   - False alarms (FP):       {fp_all} -> Loss:   ${fp_all * COST_OF_FALSE_POSITIVE:,}")
+    print(f"   - Missed churners (FN):    {fn_all} -> Loss:   $0")
+    print(f"   - Net profit: ${profit_all:,}\n")
 
-    print("2. Tuned model (XGBoost):")
-    print(f"   - Retained customers (TP): {tp_t} -> Profit: {tp_t * PROFIT_FROM_RETENTION}")
-    print(f"   - False alarms (FP):       {fp_t} -> Loss: {fp_t * COST_OF_FALSE_POSITIVE}")
-    print(f"   - Missed churners (FN):    {fn_t} -> Loss: {fn_t * COST_OF_MISSED_CHURNER}")
-    print(f"   - Net profit: {profit_tuned}\n")
+    print("1. Logistic Regression (ML baseline, no tuning):")
+    print(f"   - Retained customers (TP): {tp_b} -> Profit: ${tp_b * PROFIT_FROM_RETENTION:,}")
+    print(f"   - False alarms (FP):       {fp_b} -> Loss:   ${fp_b * COST_OF_FALSE_POSITIVE:,}")
+    print(f"   - Missed churners (FN):    {fn_b} -> Loss:   ${fn_b * COST_OF_MISSED_CHURNER:,}")
+    print(f"   - Net profit: ${profit_base:,}\n")
 
-    print("-" * 50)
+    print("2. Tuned XGBoost (optimized model):")
+    print(f"   - Retained customers (TP): {tp_t} -> Profit: ${tp_t * PROFIT_FROM_RETENTION:,}")
+    print(f"   - False alarms (FP):       {fp_t} -> Loss:   ${fp_t * COST_OF_FALSE_POSITIVE:,}")
+    print(f"   - Missed churners (FN):    {fn_t} -> Loss:   ${fn_t * COST_OF_MISSED_CHURNER:,}")
+    print(f"   - Net profit: ${profit_tuned:,}\n")
+
+    print("-" * 60)
     print("Summary:")
-    print(f"Tuning caught {tp_t - tp_b} more customers (+{tp_increase_percent:.1f}% effectiveness).")
-    print(f"Overall, the new model would bring {profit_difference} MORE profit than the baseline model on this test sample!")
-    print("=" * 50 + "\n")
+    print(f"  XGBoost vs give-everyone-a-discount: +${profit_tuned - profit_all:,}")
+    print(f"  XGBoost vs Logistic Regression:      +${profit_tuned - profit_base:,}")
+    print("=" * 60 + "\n")

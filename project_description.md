@@ -56,26 +56,26 @@ This is a **binary classification problem**: given a set of customer features, p
 - results are sorted by `Recall` (descending) — catching as many churners as possible is the primary business goal
 - save results to `data/initial_model_results.csv` and analyze:
 
-**Logistic Regression won across all 4 metrics** — best Recall (0.55), best Accuracy (0.80), best Precision (0.65), and best F1-Score (0.60). Surprisingly the simplest model outperformed all ensemble methods.
+**Logistic Regression won across all 4 metrics** — best Recall (0.56), best Accuracy (0.81), best Precision (0.66), and best F1-Score (0.61). Surprisingly the simplest model outperformed all ensemble methods.
 
 ### 8. Confusion Matrix for Logistic Regression:
 - re-train Logistic Regression once again and visualize its predictions as a **Confusion Matrix** — a 2x2 table showing exactly where the model is right and where it makes mistakes:
 
 |  | Predicted: Stays (0) | Predicted: Churns (1) |
 |---|---|---|
-| **Actual: Stays (0)** | TN = 925 ✅ correctly predicted stays | FP = 110 ❌ false alarms (predicted churn, actually stayed) |
-| **Actual: Churns (1)** | FN = 167 ❌ missed churners (predicted stay, actually churned) | TP = 207 ✅ correctly predicted churns |
+| **Actual: Stays (0)** | TN = 926 ✅ correctly predicted stays | FP = 109 ❌ false alarms (predicted churn, actually stayed) |
+| **Actual: Churns (1)** | FN = 164 ❌ missed churners (predicted stay, actually churned) | TP = 210 ✅ correctly predicted churns |
 
-- **FN (167 missed churners)** is the most costly business mistake — these are real customers who left but we never tried to retain them
+- **FN (164 missed churners)** is the most costly business mistake — these are real customers who left but we never tried to retain them
 
 ### 9. Tune hyperparameters for all the models:
 - use **Optuna** with `n_trials=50` and `scoring='recall'` (TPE Bayesian sampler) to find the best hyperparameters for each model — Optuna learns from previous trials which parameter regions are promising, making it faster and more flexible than GridSearchCV (can search continuous ranges instead of fixed lists)
 - Logistic Regression tunes both `C` (regularization strength) and `l1_ratio` (0.0=L2/Ridge vs 1.0=L1/Lasso) — Optuna picks the best combination automatically
 - save results to `data/tuned_model_results.csv` and analyze:
 
-**XGBoost wins on Recall (0.93)** — catches 93 out of every 100 real churners. However this comes with a trade-off:
-- **Accuracy = 0.62** — model is wrong on 38% of all customers
-- **Precision = 0.41** — out of every 100 customers flagged as churners, only 41 actually churn → 59 false alarms
+**XGBoost wins on Recall (0.96)** — catches 96 out of every 100 real churners. However this comes with a trade-off:
+- **Accuracy = 0.59** — model is wrong on 41% of all customers
+- **Precision = 0.39** — out of every 100 customers flagged as churners, only 39 actually churn → 61 false alarms
 
 **Is it worth it?** It depends on the business cost:
 - **Missed churner (FN)** → customer leaves, revenue lost permanently
@@ -88,21 +88,21 @@ In telecom, a missed churner is typically far more expensive than a false alarm 
 
 |  | Predicted: Stays (0) | Predicted: Churns (1) |
 |---|---|---|
-| **Actual: Stays (0)** | TN = 536 ✅ correctly predicted stays | FP = 499 ❌ false alarms (predicted churn, actually stayed) |
-| **Actual: Churns (1)** | FN = 26 ✅ missed churners (predicted stay, actually churned) | TP = 348 ✅ correctly predicted churns |
+| **Actual: Stays (0)** | TN = 470 ✅ correctly predicted stays | FP = 565 ❌ false alarms (predicted churn, actually stayed) |
+| **Actual: Churns (1)** | FN = 14 ✅ missed churners (predicted stay, actually churned) | TP = 360 ✅ correctly predicted churns |
 
 Comparison with initial Logistic Regression:
 
 | | Logistic Regression | Tuned XGBoost |
 |---|---|---|
-| **FN (missed churners)** | 167 ❌ | **26 ✅** |
-| **FP (false alarms)** | 110 | 499 |
-| **TP (caught churners)** | 207 | **348** |
+| **FN (missed churners)** | 164 ❌ | **14 ✅** |
+| **FP (false alarms)** | 109 | 565 |
+| **TP (caught churners)** | 210 | **360** |
 
-**FN dropped from 167 → 26** — XGBoost misses almost no real churners. The cost is more false alarms (499 vs 110) — we send discounts to more customers who would have stayed anyway, but we retain far more real churners. In most business scenarios this trade-off is well worth it.
+**FN dropped from 164 → 14** — XGBoost misses almost no real churners. The cost is more false alarms (565 vs 109) — we send discounts to more customers who would have stayed anyway, but we retain far more real churners. In most business scenarios this trade-off is well worth it.
 
 ### 11. Business Impact Simulation:
-- simulate the financial impact of using the tuned XGBoost model vs the baseline Logistic Regression, based on two assumptions:
+- simulate the financial impact comparing three retention strategies, based on two assumptions:
   - **Customer LTV = 1000** — revenue lost if a churner is missed
   - **Discount cost = 100** — cost of sending a retention offer
 
@@ -111,14 +111,19 @@ Net profit = TP × (LTV - discount) - FP × discount - FN × LTV
            = TP × 900              - FP × 100       - FN × 1000
 ```
 
-| | Logistic Regression | Tuned XGBoost |
-|---|---|---|
-| Retained customers (TP) | 207 → profit $186,300 | 348 → profit $313,200 |
-| False alarms (FP) | 110 → loss $11,000 | 499 → loss $49,900 |
-| Missed churners (FN) | 167 → loss $167,000 | 26 → loss $26,000 |
-| **Net profit** | **$8,300** | **$237,300** |
+Three strategies are compared:
+- **Give everyone a discount** — the real business baseline: no ML, flag every customer as at-risk. Catches all churners (FN=0) but wastes budget on every non-churner
+- **Logistic Regression** — first ML model, no tuning
+- **Tuned XGBoost** — Optuna-optimized model
 
-**Tuned XGBoost brings $229,000 more profit** on this test sample. The key driver is **FN dropping from 167 → 26** — each missed churner costs full LTV=$1000, so catching 141 more churners alone saves $141,000.
+| | Give everyone a discount | Logistic Regression | Tuned XGBoost |
+|---|---|---|---|
+| Retained customers (TP) | 374 → profit $336,600 | 210 → profit $189,000 | 360 → profit $324,000 |
+| False alarms (FP) | 1035 → loss $103,500 | 109 → loss $10,900 | 565 → loss $56,500 |
+| Missed churners (FN) | 0 | 164 → loss $164,000 | 14 → loss $14,000 |
+| **Net profit** | **$233,100** | **$14,100** | **$253,500** |
+
+**Key insight:** "Give everyone a discount" already earns $233,100 — XGBoost adds +$20,400 on top, but contacts 470 fewer customers (1035→565 false alarms). At scale this difference grows significantly. Logistic Regression ($14,100) is by far the worst — it misses too many real churners while spending budget on non-churners.
 
 ### 12. SHAP Feature Importance:
 - use **SHAP (Shapley values)** to explain which features drive the tuned XGBoost predictions — both globally (across all customers) and locally (for a single churner)

@@ -221,10 +221,10 @@ After initially testing four algorithms without hyperparameter tuning, the simpl
 
 | Model | Accuracy | Recall | Precision | F1-Score |
 |-------|----------|--------|-----------|----------|
-| **Logistic Regression** | **0.8034** | **0.5535** | **0.6530** | **0.5991** |
-| XGBoost | 0.7828 | 0.5160 | 0.6069 | 0.5578 |
-| Decision Tree | 0.7303 | 0.5080 | 0.4922 | 0.5000 |
-| Random Forest | 0.7821 | 0.4893 | 0.6120 | 0.5438 |
+| **Logistic Regression** | **0.8062** | **0.5615** | **0.6583** | **0.6061** |
+| Random Forest | 0.7871 | 0.5027 | 0.6225 | 0.5562 |
+| XGBoost | 0.7722 | 0.4973 | 0.5831 | 0.5368 |
+| Decision Tree | 0.7374 | 0.4893 | 0.5055 | 0.4973 |
 
 ---
 
@@ -258,12 +258,12 @@ Key hyperparameters tuned for each model:
 
 | Model | Accuracy | Recall | Precision | F1-Score | Best Params |
 |-------|----------|--------|-----------|----------|-------------|
-| **XGBoost** | 0.6274 | **0.9305** | 0.4109 | 0.5700 | learning_rate=0.010, max_depth=3, scale_pos_weight=5 |
-| Decision Tree | 0.6529 | 0.8797 | 0.4256 | 0.5737 | max_depth=2, min_samples_split=22 |
-| Random Forest | 0.7282 | 0.8155 | 0.4927 | 0.6143 | n_estimators=50, max_depth=3 |
-| Logistic Regression | 0.7346 | 0.7914 | 0.5000 | 0.6128 | C=0.011, l1_ratio=1.0 |
+| **XGBoost** | 0.5891 | **0.9626** | 0.3892 | 0.5543 | learning_rate=0.012, max_depth=4, scale_pos_weight=5 |
+| Decision Tree | 0.6529 | 0.8797 | 0.4256 | 0.5737 | max_depth=2, min_samples_split=8 |
+| Random Forest | 0.7062 | 0.8369 | 0.4700 | 0.6019 | n_estimators=78, max_depth=3 |
+| Logistic Regression | 0.7374 | 0.7888 | 0.5034 | 0.6146 | C=0.604, l1_ratio=1.0 |
 
-**XGBoost wins on Recall (0.93)** — catches 93 out of every 100 real churners. The trade-off is lower Precision (0.41) and more false alarms, but in telecom a missed churner costs full LTV=$1000 while a false alarm costs only a $100 discount — making this trade-off well worth it.
+**XGBoost wins on Recall (0.96)** — catches 96 out of every 100 real churners. The trade-off is lower Precision (0.39) and more false alarms, but in telecom a missed churner costs full LTV=$1000 while a false alarm costs only a $100 discount — making this trade-off well worth it.
 
 ---
 
@@ -271,18 +271,21 @@ Key hyperparameters tuned for each model:
 
 By strategically applying hyperparameter tuning and addressing class imbalance, we successfully aligned the models with our primary business goal — **maximizing Recall**.
 
-The tuned **XGBoost** model dramatically increased our churn detection rate from **55% → 93%**, reducing missed churners from 167 to just 26 on the test set.
+The tuned **XGBoost** model dramatically increased our churn detection rate from **56% → 96%**, reducing missed churners from 164 to just 14 on the test set.
 
 ### 💰 Business Value & ROI Simulation
 
-| | Logistic Regression | Tuned XGBoost |
-|---|---|---|
-| Retained customers (TP) | 207 → profit $186,300 | 348 → profit $313,200 |
-| False alarms (FP) | 110 → loss $11,000 | 499 → loss $49,900 |
-| Missed churners (FN) | 167 → loss $167,000 | 26 → loss $26,000 |
-| **Net profit** | **$8,300** | **$237,300** |
+Three strategies compared — including the real business baseline (no ML):
 
-**Tuned XGBoost brings $229,000 more profit** on this test sample alone. The key driver is FN dropping from 167 → 26 — each missed churner costs full LTV=$1,000.
+| | Give everyone a discount | Logistic Regression | Tuned XGBoost |
+|---|---|---|---|
+| Retained customers (TP) | 374 → profit $336,600 | 210 → profit $189,000 | 360 → profit $324,000 |
+| False alarms (FP) | 1035 → loss $103,500 | 109 → loss $10,900 | 565 → loss $56,500 |
+| Missed churners (FN) | 0 | 164 → loss $164,000 | 14 → loss $14,000 |
+| **Net profit** | **$233,100** | **$14,100** | **$253,500** |
+
+**XGBoost vs give-everyone-a-discount:** +$20,400 on this test sample, but contacts 470 fewer customers (1035→565 false alarms) — far more efficient at scale.  
+**XGBoost vs Logistic Regression:** +$239,400 — Logistic Regression is worst of all three.
 
 ---
 

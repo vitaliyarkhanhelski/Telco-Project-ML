@@ -57,10 +57,10 @@ All columns are now numeric — correlations work on the full dataset:
 
 | Model | Accuracy | Recall | Precision | F1-Score |
 |---|---|---|---|---|
-| **Logistic Regression** | **0.8034** | **0.5535** | **0.6530** | **0.5991** |
-| XGBoost | 0.7828 | 0.5160 | 0.6069 | 0.5578 |
-| Decision Tree | 0.7303 | 0.5080 | 0.4922 | 0.5000 |
-| Random Forest | 0.7821 | 0.4893 | 0.6120 | 0.5438 |
+| **Logistic Regression** | **0.8062** | **0.5615** | **0.6583** | **0.6061** |
+| Random Forest | 0.7871 | 0.5027 | 0.6225 | 0.5562 |
+| XGBoost | 0.7722 | 0.4973 | 0.5831 | 0.5368 |
+| Decision Tree | 0.7374 | 0.4893 | 0.5055 | 0.4973 |
 
 **Logistic Regression wins baseline** — simplest model outperforms all ensemble methods.
 
@@ -68,10 +68,10 @@ All columns are now numeric — correlations work on the full dataset:
 
 |  | Predicted: Stays | Predicted: Churns |
 |---|---|---|
-| **Actual: Stays** | TN = 925 ✅ | FP = 110 ❌ |
-| **Actual: Churns** | FN = 167 ❌ | TP = 207 ✅ |
+| **Actual: Stays** | TN = 926 ✅ | FP = 109 ❌ |
+| **Actual: Churns** | FN = 164 ❌ | TP = 210 ✅ |
 
-**167 missed churners (FN)** — the most costly mistake.
+**164 missed churners (FN)** — the most costly mistake.
 
 ## Step 10 — Hyperparameter Tuning
 - **Optuna** (`n_trials=50`, `scoring='recall'`, TPE Bayesian sampler) replaces GridSearchCV
@@ -83,21 +83,21 @@ All columns are now numeric — correlations work on the full dataset:
 
 | Model | Accuracy | Recall | Precision | F1-Score |
 |---|---|---|---|---|
-| **XGBoost** | 0.6274 | **0.9305** | 0.4109 | 0.5700 |
+| **XGBoost** | 0.5891 | **0.9626** | 0.3892 | 0.5543 |
 | Decision Tree | 0.6529 | 0.8797 | 0.4256 | 0.5737 |
-| Random Forest | 0.7282 | 0.8155 | 0.4927 | 0.6143 |
-| Logistic Regression | 0.7346 | 0.7914 | 0.5000 | 0.6128 |
+| Random Forest | 0.7062 | 0.8369 | 0.4700 | 0.6019 |
+| Logistic Regression | 0.7374 | 0.7888 | 0.5034 | 0.6146 |
 
-**XGBoost wins on Recall (0.93)** — trade-off: lower Precision (0.41), more false alarms.
+**XGBoost wins on Recall (0.96)** — trade-off: lower Precision (0.39), more false alarms.
 
 ## Step 11 — Confusion Matrix (Tuned XGBoost)
 
 |  | Predicted: Stays | Predicted: Churns |
 |---|---|---|
-| **Actual: Stays** | TN = 536 ✅ | FP = 499 ❌ |
-| **Actual: Churns** | FN = 26 ✅ | TP = 348 ✅ |
+| **Actual: Stays** | TN = 470 ✅ | FP = 565 ❌ |
+| **Actual: Churns** | FN = 14 ✅ | TP = 360 ✅ |
 
-**FN dropped from 167 → 26** — XGBoost misses almost no real churners.
+**FN dropped from 164 → 14** — XGBoost misses almost no real churners.
 
 ## Step 12 — Business Impact Simulation
 
@@ -106,14 +106,17 @@ Net profit = TP × (LTV - discount) - FP × discount - FN × LTV
            = TP × 900              - FP × 100       - FN × 1000
 ```
 
-| | Logistic Regression | Tuned XGBoost |
-|---|---|---|
-| Retained customers (TP) | 207 → +$186,300 | 348 → +$313,200 |
-| False alarms (FP) | 110 → -$11,000 | 499 → -$49,900 |
-| Missed churners (FN) | 167 → -$167,000 | 26 → -$26,000 |
-| **Net profit** | **$8,300** | **$237,300** |
+Three strategies compared — including the real business baseline (no ML):
 
-**Tuned XGBoost brings $229,000 more profit** on this test sample. Key driver: FN 167 → 26, each missed churner costs $1,000.
+| | Give everyone a discount | Logistic Regression | Tuned XGBoost |
+|---|---|---|---|
+| Retained customers (TP) | 374 → +$336,600 | 210 → +$189,000 | 360 → +$324,000 |
+| False alarms (FP) | 1035 → -$103,500 | 109 → -$10,900 | 565 → -$56,500 |
+| Missed churners (FN) | 0 | 164 → -$164,000 | 14 → -$14,000 |
+| **Net profit** | **$233,100** | **$14,100** | **$253,500** |
+
+**XGBoost vs give-everyone-a-discount:** +$20,400 — contacts 470 fewer customers (1035→565 false alarms), far more efficient at scale.  
+**XGBoost vs Logistic Regression:** +$239,400 — Logistic Regression is worst of all three.
 
 ## Step 13 — SHAP Feature Importance
 
