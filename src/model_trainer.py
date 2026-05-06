@@ -189,6 +189,7 @@ def tune_hyperparameters(X_train, X_test, y_train, y_test):
     for name, (objective, use_scaling) in models_to_tune.items():
         print(f"Tuning model: {name}...")
 
+        X_tr = X_train_scaled if use_scaling else X_train
         X_te = X_test_scaled if use_scaling else X_test
 
         study = optuna.create_study(direction='maximize')
@@ -199,19 +200,15 @@ def tune_hyperparameters(X_train, X_test, y_train, y_test):
 
         # Re-train best model on full training data and evaluate on test set
         if name == "Logistic Regression":
-            X_tr = X_train_scaled
             best_model = LogisticRegression(
                 **best_params, solver='saga', class_weight='balanced',
                 max_iter=1000, random_state=42
             )
         elif name == "Decision Tree":
-            X_tr = X_train
             best_model = DecisionTreeClassifier(**best_params, class_weight='balanced', random_state=42)
         elif name == "Random Forest":
-            X_tr = X_train
             best_model = RandomForestClassifier(**best_params, class_weight='balanced', random_state=42)
         else:  # XGBoost
-            X_tr = X_train
             best_model = XGBClassifier(**best_params, eval_metric='logloss', random_state=42)
 
         best_model.fit(X_tr, y_train)

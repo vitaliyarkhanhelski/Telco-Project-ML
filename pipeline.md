@@ -83,18 +83,18 @@ All columns are now numeric — correlations work on the full dataset:
 
 | Model | Accuracy | Recall | Precision | F1-Score | Best Params |
 |---|---|---|---|---|---|
-| **XGBoost** | 0.5891 | **0.9626** | 0.3892 | 0.5543 | learning_rate=0.012, max_depth=4, scale_pos_weight=5 |
-| Decision Tree | 0.6529 | 0.8797 | 0.4256 | 0.5737 | max_depth=2, min_samples_split=8 |
-| Random Forest | 0.7062 | 0.8369 | 0.4700 | 0.6019 | n_estimators=78, max_depth=3 |
-| Logistic Regression | 0.7374 | 0.7888 | 0.5034 | 0.6146 | C=0.604, l1_ratio=1.0 |
+| **XGBoost** | 0.6061 | **0.9626** | 0.3996 | 0.5647 | learning_rate=0.0138, max_depth=4, scale_pos_weight=5 |
+| Decision Tree | 0.6529 | 0.8797 | 0.4256 | 0.5737 | max_depth=3, min_samples_split=46 |
+| Random Forest | 0.7026 | 0.8422 | 0.4667 | 0.6006 | n_estimators=64, max_depth=3 |
+| Logistic Regression | 0.7388 | 0.7834 | 0.5052 | 0.6143 | C=2.74, l1_ratio=0.0 |
 
-**XGBoost wins on Recall (0.96)** — trade-off: lower Precision (0.39), more false alarms.
+**XGBoost wins on Recall (0.96)** — trade-off: lower Precision (0.40), more false alarms.
 
 ## Step 11 — Confusion Matrix (Tuned XGBoost)
 
 |  | Predicted: Stays | Predicted: Churns |
 |---|---|---|
-| **Actual: Stays** | TN = 470 ✅ | FP = 565 ❌ |
+| **Actual: Stays** | TN = 494 ✅ | FP = 541 ❌ |
 | **Actual: Churns** | FN = 14 ✅ | TP = 360 ✅ |
 
 **FN dropped from 164 → 14** — XGBoost misses almost no real churners.
@@ -111,12 +111,12 @@ Three strategies compared — including the real business baseline (no ML):
 | | Give everyone a discount | Logistic Regression | Tuned XGBoost |
 |---|---|---|---|
 | Retained customers (TP) | 374 → +$336,600 | 210 → +$189,000 | 360 → +$324,000 |
-| False alarms (FP) | 1035 → -$103,500 | 109 → -$10,900 | 565 → -$56,500 |
+| False alarms (FP) | 1035 → -$103,500 | 109 → -$10,900 | 541 → -$54,100 |
 | Missed churners (FN) | 0 | 164 → -$164,000 | 14 → -$14,000 |
-| **Net profit** | **$233,100** | **$14,100** | **$253,500** |
+| **Net profit** | **$233,100** | **$14,100** | **$255,900** |
 
-**XGBoost vs give-everyone-a-discount:** +\$20,400 — contacts 470 fewer customers (1035→565 false alarms), far more efficient at scale.  
-**XGBoost vs Logistic Regression:** +\$239,400 — Logistic Regression is worst of all three.
+**XGBoost vs give-everyone-a-discount:** +\$22,800 — contacts 494 fewer customers (1035→541 false alarms), far more efficient at scale.  
+**XGBoost vs Logistic Regression:** +\$241,800 — Logistic Regression is worst of all three.
 
 ## Step 13 — SHAP Feature Importance
 
