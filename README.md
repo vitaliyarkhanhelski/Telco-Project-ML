@@ -263,7 +263,7 @@ Key hyperparameters tuned for each model:
 | Random Forest | 0.7062 | 0.8369 | 0.4700 | 0.6019 | n_estimators=78, max_depth=3 |
 | Logistic Regression | 0.7374 | 0.7888 | 0.5034 | 0.6146 | C=0.604, l1_ratio=1.0 |
 
-**XGBoost wins on Recall (0.96)** — catches 96 out of every 100 real churners. The trade-off is lower Precision (0.39) and more false alarms, but in telecom a missed churner costs full LTV=$1000 while a false alarm costs only a $100 discount — making this trade-off well worth it.
+**XGBoost wins on Recall (0.96)** — catches 96 out of every 100 real churners. The trade-off is lower Precision (0.39) and more false alarms, but in telecom a missed churner costs full LTV=\$1000 while a false alarm costs only a \$100 discount — making this trade-off well worth it.
 
 ---
 
@@ -284,8 +284,8 @@ Three strategies compared — including the real business baseline (no ML):
 | Missed churners (FN) | 0 | 164 → loss $164,000 | 14 → loss $14,000 |
 | **Net profit** | **$233,100** | **$14,100** | **$253,500** |
 
-**XGBoost vs give-everyone-a-discount:** +$20,400 on this test sample, but contacts 470 fewer customers (1035→565 false alarms) — far more efficient at scale.  
-**XGBoost vs Logistic Regression:** +$239,400 — Logistic Regression is worst of all three.
+**XGBoost vs give-everyone-a-discount:** +\$20,400 on this test sample, but contacts 470 fewer customers (1035→565 false alarms) — far more efficient at scale.  
+**XGBoost vs Logistic Regression:** +\$239,400 — Logistic Regression is worst of all three.
 
 ---
 

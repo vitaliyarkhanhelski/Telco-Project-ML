@@ -2,7 +2,7 @@
 
 **Problem:** Binary classification — predict `Churn = 1` (customer leaves) or `Churn = 0` (customer stays), based on 7043 customer records from a telecom company.
 
-**Primary metric: Recall** — a missed churner (FN) costs full LTV=$1000, a false alarm (FP) costs only $100 discount. Catching churners is 10× more valuable than avoiding false alarms.
+**Primary metric: Recall** — a missed churner (FN) costs full LTV=\$1000, a false alarm (FP) costs only \$100 discount. Catching churners is 10× more valuable than avoiding false alarms.
 
 ---
 
@@ -46,8 +46,8 @@ All columns are now numeric — correlations work on the full dataset:
 - Test set is never seen during training
 
 ## Step 7 — Scaling (Logistic Regression only)
-- `StandardScaler` fitted **once** on `X_train`, applied to both sets
-- Applied **only to Logistic Regression** — gradient-based, sensitive to feature scale
+- `StandardScaler` fitted **once** on `X_train`, applied to both sets `X_train` and `X_test`
+- Applied **only to Logistic Regression** — gradient-based(learns weights by making small iterative steps toward minimum error), sensitive to feature scale
 - Tree-based models (Decision Tree, Random Forest, XGBoost) receive **raw unscaled data** — splits on thresholds, scale is irrelevant
 
 ## Step 8 — Baseline Model Training
@@ -115,8 +115,8 @@ Three strategies compared — including the real business baseline (no ML):
 | Missed churners (FN) | 0 | 164 → -$164,000 | 14 → -$14,000 |
 | **Net profit** | **$233,100** | **$14,100** | **$253,500** |
 
-**XGBoost vs give-everyone-a-discount:** +$20,400 — contacts 470 fewer customers (1035→565 false alarms), far more efficient at scale.  
-**XGBoost vs Logistic Regression:** +$239,400 — Logistic Regression is worst of all three.
+**XGBoost vs give-everyone-a-discount:** +\$20,400 — contacts 470 fewer customers (1035→565 false alarms), far more efficient at scale.  
+**XGBoost vs Logistic Regression:** +\$239,400 — Logistic Regression is worst of all three.
 
 ## Step 13 — SHAP Feature Importance
 

@@ -82,3 +82,10 @@ This document contains simple, easy-to-understand definitions of the key concept
 * **TN (True Negative):** Model predicted stay → customer actually stayed ✅
 * **FP (False Positive):** Model predicted churn → customer actually stayed ❌ (false alarm — we sent a discount unnecessarily)
 * **FN (False Negative):** Model predicted stay → customer actually churned ❌ (missed churner — the most costly mistake)
+
+```
+Accuracy  = (TP + TN) / (TP + TN + FP + FN)
+Recall    = TP / (TP + FN)
+Precision = TP / (TP + FP)
+F1        = 2 × (Precision × Recall) / (Precision + Recall)
+```
